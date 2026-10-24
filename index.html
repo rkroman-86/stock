@@ -28,6 +28,7 @@
   --warn:#fbbf24; --low-bg:#3a3010; --danger:#f87171; --zero-bg:#3d1717; --shadow:none;
 }}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 a{color:var(--accent)}
 header{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:8px;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;background:var(--surface);border-bottom:1px solid var(--line)}
@@ -213,7 +214,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <script>
 'use strict';
 /* ====== Constantes ====== */
-const APP_VERSION = '10';
+const APP_VERSION = '11';
 const FILE_NAME = 'gestion-stock-donnees.json';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 // Client ID OAuth intégré : permet à tous les utilisateurs de connecter LEUR Google Drive sans configuration.
@@ -539,7 +540,8 @@ function viewProduct(id) {
       <div class="row2" style="margin-top:8px"><button class="btn" id="dlLbl" type="button">⬇️ Télécharger</button><button class="btn" id="print" type="button">🖨️ Imprimer</button></div>
       <p class="muted small">Format ${labelCfg().w} × ${labelCfg().h} mm · modifiable dans les paramètres. « Partager » envoie l'image à l'appli de votre imprimante (Phomemo, Tiny Print…).</p>
     </section>
-    <section class="panel"><h2>Historique</h2>${sales.length ? `<p class="muted small">Ventes : ${fmtNum(soldQ)} u. · ${eur(ca)} TTC</p>` : ''}<div id="hist"></div></section>
+    <section class="panel"><h2>Historique</h2>${sales.length ? `<p class="muted small">Ventes : ${fmtNum(soldQ)} u. · ${eur(ca)} TTC</p>` : ''}<div id="hist"></div>
+      ${ms.length ? '<button class="btn block" id="expHist" type="button" style="margin-top:10px">📄 Exporter les mouvements…</button>' : ''}</section>
     <button class="btn danger block" id="del" type="button">Supprimer le produit</button>`;
   const read = bindForm(p, false, () => {
     const cur = DB.products[id]; if (!cur) return;
@@ -554,6 +556,7 @@ function viewProduct(id) {
   $('#bIn').onclick = () => openMove(id, 'in');
   $('#bOut').onclick = () => openMove(id, 'out');
   $('#print').onclick = () => printLabel(DB.products[id]);
+  if ($('#expHist')) $('#expHist').onclick = () => showProductExport(id);
   $('#del').onclick = () => {
     if (!confirm(`Supprimer « ${p.name} » et tout son historique ?`)) return;
     const t = nowISO(), cur = DB.products[id];
@@ -845,9 +848,15 @@ function stockTotals() {
 // Coût d'achat d'une sortie = quantité × prix d'achat HT de la fiche produit
 const costHT = m => (m.qty || 0) * (+(DB.products[m.productId] || {}).buyHT || 0);
 const gainHT = m => (m.dir === 'out' && m.type === 'vente') ? m.unitHT * m.qty - costHT(m) : 0;
-function movesInRange(from, to) {
+function movesInRange(from, to, pid) {
   const f = from ? from.toISOString() : '', t = to ? to.toISOString() : '';
-  return Object.values(DB.movements).filter(m => !m.deleted && (!f || m.date >= f) && (!t || m.date < t)).sort((a, b) => a.date.localeCompare(b.date));
+  return Object.values(DB.movements).filter(m => !m.deleted && (!pid || m.productId === pid) && (!f || m.date >= f) && (!t || m.date < t)).sort((a, b) => a.date.localeCompare(b.date));
+}
+// Stock d'un produit à une date donnée (somme des mouvements antérieurs)
+function stockAt(pid, date) {
+  const d = date ? date.toISOString() : null; let s = 0;
+  for (const m of Object.values(DB.movements)) if (!m.deleted && m.productId === pid && (!d || m.date < d)) s += (m.dir === 'in' ? 1 : -1) * (+m.qty || 0);
+  return s;
 }
 function moveTotals(list) {
   const T = { n: list.length, in: { q: 0, ht: 0, ttc: 0 }, out: { q: 0, ht: 0, ttc: 0 }, types: {}, venteQ: 0, venteHT: 0, venteTTC: 0, coutHT: 0, gainHT: 0 };
@@ -876,9 +885,17 @@ function exportStockCSV() {
   rows.push(['Marge potentielle', '', '', '', '', '', '', '', '', '', dec(t.sellHT - t.buyHT), dec(t.sellTTC - t.buyTTC), '']);
   download(`stock-${today()}.csv`, toCSV(rows), 'text/csv;charset=utf-8');
 }
-function exportMovesCSV(from, to) {
-  const list = movesInRange(from, to);
-  const rows = [['Date', 'Code', 'Produit', 'Sens', 'Type', 'Quantité', 'PU HT', 'PU TTC', 'Total HT', 'Total TTC', 'TVA %', 'Gain HT (ventes)', 'Note']];
+function exportMovesCSV(from, to, pid) {
+  const list = movesInRange(from, to, pid), prod = pid ? DB.products[pid] : null;
+  const rows = [];
+  if (prod) {
+    rows.push(['Produit', prod.name, 'Code', prod.code]);
+    rows.push(['Période', periodLabel(from, to)]);
+    rows.push(['Stock en début de période', fmtNum(from ? stockAt(pid, from) : 0)]);
+    rows.push(['Stock en fin de période', fmtNum(stockAt(pid, to))]);
+    rows.push([]);
+  }
+  rows.push(['Date', 'Code', 'Produit', 'Sens', 'Type', 'Quantité', 'PU HT', 'PU TTC', 'Total HT', 'Total TTC', 'TVA %', 'Gain HT (ventes)', 'Note']);
   list.forEach(m => {
     const p = DB.products[m.productId] || {}, isSale = m.dir === 'out' && m.type === 'vente';
     rows.push([fmtDate(m.date), p.code || '', p.name || '', m.dir === 'in' ? 'Entrée' : 'Sortie', TYPES[m.dir][m.type] || m.type, fmtNum(m.qty), dec(m.unitHT), dec(ttc(m.unitHT, m.tva)), dec(m.unitHT * m.qty), dec(ttc(m.unitHT, m.tva) * m.qty), dec(m.tva), isSale ? dec(gainHT(m)) : '', m.note || '']);
@@ -892,8 +909,46 @@ function exportMovesCSV(from, to) {
   rows.push(line('Prix total de vente', T.venteQ, T.venteHT, T.venteTTC));
   rows.push(line('Coût d\'achat des articles vendus', T.venteQ, T.coutHT, ''));
   rows.push(line('MONTANT TOTAL GAGNÉ (marge HT)', '', '', '', T.gainHT));
-  const suffix = from || to ? `-${(from || new Date(0)).toISOString().slice(0, 10)}_${to ? new Date(to - 1).toISOString().slice(0, 10) : today()}` : `-${today()}`;
-  download(`mouvements${suffix}.csv`, toCSV(rows), 'text/csv;charset=utf-8');
+  const ymd = d => localDT(d).slice(0, 10);
+  const suffix = from || to ? `-${from ? ymd(from) : 'debut'}_${to ? ymd(new Date(to - 1)) : today()}` : `-${today()}`;
+  const tag = prod ? '-' + (prod.code || 'produit').replace(/[^\w-]/g, '') : '';
+  download(`mouvements${tag}${suffix}.csv`, toCSV(rows), 'text/csv;charset=utf-8');
+}
+function periodLabel(from, to) {
+  const d = x => x.toLocaleDateString('fr-FR');
+  if (!from && !to) return 'Depuis le début';
+  return `${from ? 'Du ' + d(from) : 'Depuis le début'}${to ? ' au ' + d(new Date(to - 1)) : ' à aujourd\'hui'}`;
+}
+
+/* ====== Export des mouvements d'un produit ====== */
+let prodPeriod = 'all';
+function showProductExport(pid) {
+  const p = DB.products[pid]; if (!p) return;
+  $('#infoTitle').textContent = 'Exporter les mouvements';
+  $('#infoBody').innerHTML = `
+    <p class="muted small" style="margin:0">${esc(p.name)} · ${esc(p.code)}</p>
+    <label>Période<select id="tp_sel">${PERIOD_OPTS.map(([k, l]) => `<option value="${k}"${k === prodPeriod ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+    <div class="pair" id="tp_custom"${prodPeriod === 'custom' ? '' : ' hidden'}><label>Du<input type="date" id="tp_from"></label><label>Au<input type="date" id="tp_to"></label></div>
+    <div id="tp_res"></div>
+    <button class="btn primary block big" id="infoCsv" type="button">📄 Exporter (CSV / Excel)</button>`;
+  const render = () => {
+    const [from, to] = periodRange(prodPeriod), list = movesInRange(from, to, pid), T = moveTotals(list);
+    $('#tp_res').innerHTML = `
+      <table class="tt"><tbody>
+        ${trow('Mouvements sur la période', `<b>${list.length}</b>`)}
+        ${trow('Stock en début de période', fmtNum(from ? stockAt(pid, from) : 0))}
+        ${trow('＋ Entrées', fmtNum(T.in.q))}
+        ${trow('− Sorties', fmtNum(T.out.q))}
+        ${trow('Stock en fin de période', `<b>${fmtNum(stockAt(pid, to))}</b>`)}
+        ${T.venteQ ? trow('Ventes', `${fmtNum(T.venteQ)} u. · ${eur(T.venteTTC)} TTC`) + trow('Montant gagné (HT)', `<b>${eur(T.gainHT)}</b>`) : ''}
+      </tbody></table>`;
+    $('#infoCsv').disabled = !list.length;
+  };
+  $('#tp_sel').onchange = e => { prodPeriod = e.target.value; $('#tp_custom').hidden = prodPeriod !== 'custom'; render(); };
+  $('#tp_from').onchange = render; $('#tp_to').onchange = render;
+  $('#infoCsv').onclick = () => { const [f, t] = periodRange(prodPeriod); exportMovesCSV(f, t, pid); };
+  render();
+  $('#infoDlg').showModal();
 }
 
 /* ====== Fenêtre des totaux ====== */
@@ -930,9 +985,10 @@ function periodRange(k) {
   }
 }
 let movePeriod = 'all';
+const PERIOD_OPTS = [['all', 'Depuis le début'], ['today', 'Aujourd\'hui'], ['7d', '7 derniers jours'], ['month', 'Ce mois-ci'], ['lastmonth', 'Mois dernier'], ['year', 'Cette année'], ['custom', 'Période personnalisée']];
 function showMoveTotals() {
   $('#infoTitle').textContent = 'Totaux des mouvements';
-  const opts = [['all', 'Depuis le début'], ['today', 'Aujourd\'hui'], ['7d', '7 derniers jours'], ['month', 'Ce mois-ci'], ['lastmonth', 'Mois dernier'], ['year', 'Cette année'], ['custom', 'Période personnalisée']];
+  const opts = PERIOD_OPTS;
   $('#infoBody').innerHTML = `
     <label>Période<select id="tp_sel">${opts.map(([k, l]) => `<option value="${k}"${k === movePeriod ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
     <div class="pair" id="tp_custom"${movePeriod === 'custom' ? '' : ' hidden'}><label>Du<input type="date" id="tp_from"></label><label>Au<input type="date" id="tp_to"></label></div>
