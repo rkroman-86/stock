@@ -1,6 +1,6 @@
 // Service worker : rend l'appli installable et utilisable hors ligne.
 // Changer VERSION à chaque mise à jour importante pour forcer le rafraîchissement du cache.
-const VERSION = 'stock-v6';
+const VERSION = 'stock-v7';
 const SHELL = [
   './',
   './index.html',
@@ -17,7 +17,7 @@ const LIBS = [
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(VERSION);
-    await c.addAll(SHELL);
+    await c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })));
     await Promise.all(LIBS.map(u => c.add(u).catch(() => {})));
     self.skipWaiting();
   })());
@@ -47,7 +47,8 @@ self.addEventListener('fetch', e => {
 
   // Fichiers de l'appli : réseau d'abord (pour recevoir les mises à jour), cache si hors ligne
   if (url.origin === location.origin) {
-    e.respondWith(fetch(req).then(res => {
+    // cache: 'no-cache' : revalide toujours auprès du serveur (évite de rester bloqué sur une ancienne version)
+    e.respondWith(fetch(req, { cache: 'no-cache' }).then(res => {
       if (res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); }
       return res;
     }).catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('./index.html'))));
