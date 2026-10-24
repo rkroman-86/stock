@@ -1,0 +1,1026 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Gestion de stock</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#f3f4f1; --surface:#fff; --surface2:#eceee9; --text:#1b1f1d; --muted:#69716c; --line:#dcdfda;
+  --accent:#0f766e; --accent-ink:#fff;
+  --in:#15803d; --in-bg:#e5f5ea; --out:#c2410c; --out-bg:#fdede3;
+  --warn:#a16207; --low-bg:#fdf3d0; --danger:#b91c1c; --zero-bg:#fde4e4;
+  --radius:14px; --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#111413; --surface:#1a1f1d; --surface2:#232926; --text:#e7ebe8; --muted:#97a09a; --line:#2e3532;
+  --accent:#2dd4bf; --accent-ink:#04201c;
+  --in:#4ade80; --in-bg:#12301e; --out:#fb923c; --out-bg:#3a2213;
+  --warn:#fbbf24; --low-bg:#3a3010; --danger:#f87171; --zero-bg:#3d1717; --shadow:none;
+}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+a{color:var(--accent)}
+header{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:8px;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{flex:1;min-width:0;display:flex;align-items:center;gap:8px;font-weight:800;font-size:18px;color:var(--text);text-decoration:none}
+.brand span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:999px;padding:6px 10px;font:600 12px system-ui;cursor:pointer;white-space:nowrap}
+.badge i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.badge.ok i{background:var(--in)}.badge.dirty i{background:var(--warn)}.badge.err i{background:var(--danger)}
+.badge.busy i{background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.iconbtn{border:none;background:transparent;color:var(--text);width:40px;height:40px;border-radius:10px;display:grid;place-items:center;cursor:pointer}
+main{max-width:1100px;margin:0 auto;padding:14px 16px calc(96px + env(safe-area-inset-bottom))}
+.bottombar{position:fixed;left:0;right:0;bottom:0;z-index:10;display:grid;grid-template-columns:1.4fr 1fr;gap:10px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--line)}
+.bottombar .btn{min-height:50px;font-size:16px}
+@media(min-width:720px){.bottombar{left:50%;right:auto;transform:translateX(-50%);width:520px;border:1px solid var(--line);border-bottom:none;border-radius:16px 16px 0 0}}
+
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-weight:600;padding:10px 14px;border-radius:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;text-decoration:none}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.in{background:var(--in-bg);color:var(--in);border-color:transparent}
+.btn.out{background:var(--out-bg);color:var(--out);border-color:transparent}
+.btn.big{min-height:54px;font-size:17px}
+.btn.block{width:100%}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--danger);background:transparent;border-color:var(--danger)}
+.btn.sq{width:46px;padding:0;flex:none}
+
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.summary div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column}
+.summary b{font-size:17px}.summary span{font-size:11px;color:var(--muted)}
+.search input{width:100%}
+.chips{display:flex;gap:6px;margin:10px 0 12px;overflow-x:auto}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:7px 14px;font:600 13px system-ui;white-space:nowrap;cursor:pointer}
+.chip.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.grid{display:grid;gap:10px;grid-template-columns:1fr}
+@media(min-width:720px){.grid{grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}}
+.card{display:grid;grid-template-columns:64px 1fr auto;grid-template-areas:"t i s" "a a a";gap:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);cursor:pointer}
+.thumb{grid-area:t;width:64px;height:64px;border-radius:10px;background:var(--surface2);overflow:hidden;display:grid;place-items:center;font-size:26px}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.info{grid-area:i;min-width:0}
+.info h3{margin:0;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.code{font:12px ui-monospace,Menlo,monospace;color:var(--muted)}
+.price{font-size:13px;margin-top:3px}.price small{color:var(--muted)}
+.stock{grid-area:s;text-align:center;min-width:58px;padding:6px 8px;border-radius:10px;align-self:start}
+.stock b{display:block;font-size:20px;line-height:1.1}.stock small{font-size:10px;opacity:.8}
+.ok{background:var(--in-bg);color:var(--in)}.low{background:var(--low-bg);color:var(--warn)}.zero{background:var(--zero-bg);color:var(--danger)}
+.cact{grid-area:a;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.empty{text-align:center;color:var(--muted);padding:40px 16px;background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius)}
+
+.back{display:inline-block;margin-bottom:10px;text-decoration:none;font-weight:600}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.panel h2{margin:0 0 12px;font-size:16px}
+.stockbig{display:flex;align-items:baseline;justify-content:space-between;border-radius:12px;padding:12px 16px;margin-bottom:12px}
+.stockbig b{font-size:34px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.photo-wrap{margin-bottom:14px}
+.photo{width:100%;aspect-ratio:4/3;max-height:340px;background:var(--surface2);border-radius:12px;overflow:hidden;display:grid;place-items:center}
+.photo img{width:100%;height:100%;object-fit:contain}
+.ph{display:flex;flex-direction:column;align-items:center;font-size:40px;color:var(--muted)}.ph small{font-size:13px}
+.photo-btns{display:flex;gap:8px;margin-top:8px}.photo-btns .btn{flex:1}
+.form{display:flex;flex-direction:column;gap:12px}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
+label.check{flex-direction:row;align-items:center;gap:10px;color:var(--text);font-weight:500;font-size:14px}
+label.check input{width:20px;height:20px}
+input,select,textarea{font:inherit;font-size:16px;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-width:0}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.inline{display:flex;gap:6px}
+.margin{font-size:13px;color:var(--muted);margin-top:-4px}
+.bc-box{background:#fff;border-radius:12px;padding:8px;display:flex;justify-content:center;margin:12px 0}
+.bc-box svg{max-width:100%;height:auto}
+.bc-box.lbl{background:var(--surface2);padding:14px}
+.bc-box.lbl img{display:block;max-width:100%;max-height:240px;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.18);border-radius:4px}
+.muted{color:var(--muted)}.small{font-size:13px}
+.mv{display:grid;grid-template-columns:1fr auto 32px;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.mv:first-child{border-top:none}
+.mvl b{font-size:16px}.mv.in .mvl b{color:var(--in)}.mv.out .mvl b{color:var(--out)}
+.mvl small{display:block;color:var(--muted)}
+.mvr{text-align:right;font-size:13px}
+.x{border:none;background:transparent;color:var(--muted);font-size:16px;cursor:pointer;height:32px}
+.status{display:block;background:var(--surface2);border-radius:10px;padding:10px 12px;margin:10px 0;font-size:14px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--muted);margin-right:4px}
+.dot.ok{background:var(--in)}.dot.dirty{background:var(--warn)}.dot.err{background:var(--danger)}
+.stack{display:flex;flex-direction:column;gap:10px}
+details{margin-top:12px;font-size:14px}details summary{cursor:pointer;font-weight:600}
+details ol{padding-left:20px}details li{margin:6px 0}
+code{background:var(--surface2);padding:1px 5px;border-radius:5px;font-size:13px;word-break:break-all}
+
+dialog{border:none;border-radius:20px;padding:0;width:min(520px,calc(100% - 20px));max-height:92vh;overflow:auto;background:var(--surface);color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+@media(max-width:600px){dialog{margin:auto 0 0;width:100%;max-width:100%;border-radius:20px 20px 0 0}}
+dialog form{padding:18px 18px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+dialog h2{margin:0;font-size:19px}
+dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
+#mvProd{margin:-8px 0 0}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1 1 auto;border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:10px;padding:10px 8px;font:600 14px system-ui;cursor:pointer}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.qty{display:flex;gap:6px}.qty input{text-align:center;font-size:20px;font-weight:700}.qty .btn{width:54px;font-size:20px;flex:none}
+.tot input{font-weight:700}
+
+.overlay{position:fixed;inset:0;z-index:50;background:#000;color:#fff;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.overlay[hidden]{display:none}
+.scan-top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px}
+.scan-top .btn{color:#fff;border-color:#555}
+#reader{flex:1;width:100%;overflow:hidden;border:none!important}
+#reader video{object-fit:cover}
+.scan-manual{display:flex;gap:8px;padding:12px 16px}
+.scan-manual input{background:#1c1c1c;color:#fff;border-color:#444}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kpis div{background:var(--surface2);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.kpis b{font-size:20px}.kpis small{font-size:12px;color:var(--muted)}
+.kpis .gain{background:var(--in-bg)}.kpis .gain b{color:var(--in)}
+.tt{width:100%;border-collapse:collapse;font-size:14px}
+.tt th,.tt td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.tt th:first-child{text-align:left;font-weight:500;white-space:normal}
+.tt thead th{font-size:12px;color:var(--muted);font-weight:600}
+#toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;opacity:0;pointer-events:none;transition:.2s;z-index:100;max-width:calc(100% - 32px);text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<header>
+  <a href="#/" class="brand">📦 <span id="title">Stock</span></a>
+  <button id="syncBadge" class="badge off" type="button"><i></i><span>Local</span></button>
+  <button id="btnSettings" class="iconbtn" type="button" aria-label="Paramètres">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+</header>
+
+<main id="view"></main>
+
+<nav class="bottombar">
+  <button class="btn primary" id="btnScan" type="button">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13.5 8v8M17 8v8"/></svg>
+    Scanner
+  </button>
+  <button class="btn" id="btnNew" type="button">＋ Nouveau</button>
+</nav>
+
+<dialog id="infoDlg">
+  <form method="dialog">
+    <h2 id="infoTitle">Totaux</h2>
+    <div id="infoBody" class="stack"></div>
+    <button class="btn block" value="close">Fermer</button>
+  </form>
+</dialog>
+
+<dialog id="mvDlg">
+  <form id="mvForm" method="dialog">
+    <h2 id="mvTitle">Mouvement</h2>
+    <p id="mvProd" class="muted small"></p>
+    <div class="seg" id="mvTypes"></div>
+    <label>Date<input type="datetime-local" id="m_date"></label>
+    <label>Quantité
+      <span class="qty"><button type="button" class="btn" data-q="-1">−</button><input id="m_qty" inputmode="decimal" autocomplete="off"><button type="button" class="btn" data-q="1">+</button></span>
+    </label>
+    <div class="pair">
+      <label>Prix unitaire HT<input id="m_uht" inputmode="decimal" autocomplete="off"></label>
+      <label>Prix unitaire TTC<input id="m_uttc" inputmode="decimal" autocomplete="off"></label>
+    </div>
+    <div class="pair tot">
+      <label>Total HT<input id="m_tht" inputmode="decimal" autocomplete="off"></label>
+      <label>Total TTC<input id="m_tttc" inputmode="decimal" autocomplete="off"></label>
+    </div>
+    <p class="muted small" id="m_tvaLbl" style="margin:-6px 0 0"></p>
+    <label>Note (facultatif)<input id="m_note" placeholder="Fournisseur, client, n° facture…" autocomplete="off"></label>
+    <div class="row2">
+      <button type="button" class="btn" id="mvCancel">Annuler</button>
+      <button type="button" class="btn primary" id="mvOk">Valider</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="scanOv" class="overlay" hidden>
+  <div class="scan-top"><b>Scanner un code-barres</b><button class="btn ghost" id="scanClose" type="button">Fermer</button></div>
+  <div id="reader"></div>
+  <form id="scanManual" class="scan-manual"><input id="scanInput" inputmode="numeric" placeholder="ou saisir le code…" autocomplete="off"><button class="btn primary">OK</button></form>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ====== Constantes ====== */
+const FILE_NAME = 'gestion-stock-donnees.json';
+const SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const SKEY = 'stock.settings', TKEY = 'stock.token';
+const TYPES = {
+  in:  { achat: 'Achat fournisseur', retour: 'Retour client', inventaire: 'Inventaire' },
+  out: { vente: 'Vente', don: 'Don', inventaire: 'Inventaire' }
+};
+const TVA_RATES = [20, 10, 5.5, 2.1, 0];
+const ICON_SCAN = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13.5 8v8M17 8v8"/></svg>';
+
+/* ====== Utilitaires ====== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+const nowISO = () => new Date().toISOString();
+const num = v => { const n = parseFloat(String(v ?? '').replace(',', '.').replace(/[\s\u00a0€]/g, '')); return isNaN(n) ? 0 : n; };
+const fx2 = n => (Math.round((+n || 0) * 100) / 100).toFixed(2);
+const eurFmt = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
+const eur = n => eurFmt.format(+n || 0);
+const fmtNum = n => { const v = +n || 0; return Number.isInteger(v) ? String(v) : v.toLocaleString('fr-FR', { maximumFractionDigits: 3 }); };
+const fmtDate = iso => new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+const ttc = (ht, t) => (+ht || 0) * (1 + (+t || 0) / 100);
+const htFrom = (v, t) => (+v || 0) / (1 + (+t || 0) / 100);
+const safeJSON = s => { try { return JSON.parse(s) || {}; } catch { return {}; } };
+const localDT = (d = new Date()) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+let toastT;
+function toast(msg, ms = 2600) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), ms); }
+function setTitle(t) { $('#title').textContent = t; document.title = t + ' · Stock'; }
+
+/* ====== Stockage local (IndexedDB) ====== */
+const idb = {
+  db: null,
+  open() { return new Promise((res, rej) => { const r = indexedDB.open('gestion-stock', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => { this.db = r.result; res(); }; r.onerror = () => rej(r.error); }); },
+  get(k) { return new Promise((res, rej) => { const q = this.db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); },
+  set(k, v) { return new Promise((res, rej) => { const tx = this.db.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); }); }
+};
+
+/* ====== État ====== */
+let DB = { products: {}, movements: {} };
+let S = Object.assign({ clientId: '', tva: 20, autoSync: true, fileId: null, driveOn: false, lastSync: null, dirty: false }, safeJSON(localStorage.getItem(SKEY)));
+let ver = 0;
+const saveS = () => localStorage.setItem(SKEY, JSON.stringify(S));
+async function persist() { try { await idb.set('db', DB); } catch (e) { toast('Erreur d\'enregistrement local : ' + e.message); } }
+function touch() { ver++; S.dirty = true; saveS(); persist().then(() => { updateBadge(); scheduleSync(); }); }
+
+const activeProducts = () => Object.values(DB.products).filter(p => !p.deleted);
+function stockMap() { const m = {}; for (const mv of Object.values(DB.movements)) { if (mv.deleted) continue; m[mv.productId] = (m[mv.productId] || 0) + (mv.dir === 'in' ? 1 : -1) * (+mv.qty || 0); } return m; }
+const stockOf = id => stockMap()[id] || 0;
+const movementsOf = id => Object.values(DB.movements).filter(m => !m.deleted && m.productId === id).sort((a, b) => b.date.localeCompare(a.date));
+const codeExists = (c, exceptId) => activeProducts().some(p => p.code === c && p.id !== exceptId);
+const findByCode = c => activeProducts().find(p => p.code === c || p.code === '0' + c || '0' + p.code === c);
+const stockCls = (s, p) => s <= 0 ? 'zero' : s <= (+p.minStock || 0) ? 'low' : 'ok';
+
+/* ====== Codes-barres ====== */
+function ean13Check(d12) { let s = 0; for (let i = 0; i < 12; i++) s += (+d12[i]) * (i % 2 ? 3 : 1); return (10 - s % 10) % 10; }
+const isEAN13 = c => /^\d{13}$/.test(c) && ean13Check(c.slice(0, 12)) === +c[12];
+// Préfixe 20-29 = plage EAN réservée à l'usage interne (codes magasin)
+function genCode() { let c; do { let d = '2' + Math.floor(Math.random() * 10); for (let i = 0; i < 10; i++) d += Math.floor(Math.random() * 10); c = d + ean13Check(d); } while (codeExists(c)); return c; }
+function renderBarcode(code) {
+  const svg = $('#bc'); if (!svg) return; svg.innerHTML = ''; if (!code || typeof JsBarcode === 'undefined') return;
+  const o = { height: 70, width: 2, fontSize: 16, margin: 10, background: '#ffffff', lineColor: '#000000' };
+  try { JsBarcode(svg, code, { ...o, format: isEAN13(code) ? 'EAN13' : 'CODE128' }); }
+  catch { try { JsBarcode(svg, code, { ...o, format: 'CODE128' }); } catch {} }
+}
+/* ====== Étiquette image (universelle) ====== */
+const PXMM = 12; // ≈ 300 dpi : net sur toutes les imprimantes thermiques (203 ou 300 dpi)
+const LABEL_PRESETS = [['40x30', '40 × 30 mm'], ['50x30', '50 × 30 mm'], ['50x50', '50 × 50 mm'], ['30x20', '30 × 20 mm'], ['57x30', '57 × 30 mm (rouleau continu)'], ['57x40', '57 × 40 mm (rouleau continu)'], ['custom', 'Personnalisé']];
+const labelCfg = () => Object.assign({ w: 40, h: 30, name: true, price: true, rotate: false }, S.label || {});
+function wrapLines(ctx, text, maxW) {
+  const lines = []; let cur = '';
+  for (const w of String(text).split(/\s+/).filter(Boolean)) { const t = cur ? cur + ' ' + w : w; if (!cur || ctx.measureText(t).width <= maxW) cur = t; else { lines.push(cur); cur = w; } }
+  if (cur) lines.push(cur); return lines;
+}
+function drawFitText(ctx, text, cx, y, maxW, maxH, maxLines, weight) {
+  const font = s => `${weight} ${s}px system-ui,-apple-system,Roboto,Arial,sans-serif`;
+  for (let s = Math.floor(maxH); s >= 10; s--) {
+    ctx.font = font(s); const lines = wrapLines(ctx, text, maxW), lh = s * 1.12;
+    if (lines.length <= maxLines && lines.length * lh <= maxH && lines.every(l => ctx.measureText(l).width <= maxW)) {
+      const top = y + (maxH - lines.length * lh) / 2;
+      lines.forEach((l, i) => ctx.fillText(l, cx, top + i * lh + s * 0.92)); return;
+    }
+  }
+  ctx.font = font(10); let t = String(text); while (t.length > 1 && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
+  ctx.fillText(t + '…', cx, y + maxH * 0.7);
+}
+function barcodeCanvas(code, maxW, maxH) {
+  if (!code || typeof JsBarcode === 'undefined') return null;
+  const fs = Math.max(14, Math.min(40, Math.round(maxH * 0.2)));
+  const make = (fmt, mod, h) => { const c = document.createElement('canvas'); JsBarcode(c, code, { format: fmt, width: mod, height: h, displayValue: true, fontSize: fs, textMargin: 2, margin: 0, background: '#ffffff', lineColor: '#000000', font: 'monospace', fontOptions: 'bold' }); return c; };
+  for (const fmt of (isEAN13(code) ? ['EAN13', 'CODE128'] : ['CODE128'])) {
+    try {
+      const probe = make(fmt, 1, 10);
+      const mod = Math.max(1, Math.floor(maxW / probe.width));
+      return make(fmt, mod, Math.max(10, maxH - fs - 4));
+    } catch {}
+  }
+  return null;
+}
+function labelCanvas(p, cfg = labelCfg()) {
+  const W = Math.round(cfg.w * PXMM), H = Math.round(cfg.h * PXMM);
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); x.fillStyle = '#000'; x.textAlign = 'center';
+  const pad = Math.round(1.5 * PXMM), gap = Math.round(0.6 * PXMM), iw = W - 2 * pad, ih = H - 2 * pad;
+  let top = pad, bottom = H - pad;
+  if (cfg.name) { const nh = Math.round(ih * 0.26); drawFitText(x, p.name || '', W / 2, top, iw, nh, 2, '700'); top += nh + gap; }
+  if (cfg.price) { const ph = Math.round(ih * 0.2); drawFitText(x, `${eur(ttc(p.sellHT, p.tva))} TTC`, W / 2, bottom - ph, iw, ph, 1, '800'); bottom -= ph + gap; }
+  const bh = bottom - top, bc = barcodeCanvas(p.code, iw, bh);
+  if (bc) { const dh = Math.min(bc.height, bh), dw = Math.min(bc.width, iw); x.drawImage(bc, Math.round((W - dw) / 2), Math.round(top + (bh - dh) / 2), dw, dh); }
+  else drawFitText(x, p.code || '', W / 2, top, iw, bh, 1, '700');
+  if (!cfg.rotate) return c;
+  const r = document.createElement('canvas'); r.width = H; r.height = W;
+  const rx = r.getContext('2d'); rx.translate(H, 0); rx.rotate(Math.PI / 2); rx.drawImage(c, 0, 0);
+  return r;
+}
+const labelName = p => `etiquette-${(p.code || 'produit').replace(/[^\w-]/g, '')}.png`;
+const labelBlob = p => new Promise(res => labelCanvas(p).toBlob(res, 'image/png'));
+function showLabel(p) { const img = $('#lbl'); if (img) img.src = labelCanvas(p).toDataURL('image/png'); }
+async function shareLabel(p) {
+  const blob = await labelBlob(p), name = labelName(p);
+  const file = new File([blob], name, { type: 'image/png' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); }
+    catch (e) { if (e.name !== 'AbortError') { download(name, blob, 'image/png'); toast('Partage impossible : image téléchargée'); } }
+  } else { download(name, blob, 'image/png'); toast('Partage non disponible ici : image téléchargée'); }
+}
+async function downloadLabel(p) { download(labelName(p), await labelBlob(p), 'image/png'); }
+function printLabel(p) {
+  const cfg = labelCfg(), w = cfg.rotate ? cfg.h : cfg.w, h = cfg.rotate ? cfg.w : cfg.h;
+  const src = labelCanvas(p, cfg).toDataURL('image/png');
+  const win = window.open('', '_blank'); if (!win) { toast('Fenêtre d\'impression bloquée'); return; }
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Étiquette</title><style>@page{size:${w}mm ${h}mm;margin:0}html,body{margin:0}img{display:block;width:${w}mm;height:${h}mm}</style></head><body><img src="${src}"><script>document.querySelector('img').onload=function(){print()}<\/script></body></html>`);
+  win.document.close();
+}
+
+/* ====== Photos ====== */
+function resizeImage(file, max = 640, q = 0.72) {
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => { const s = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', q)); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('image')); };
+    img.src = url;
+  });
+}
+const photoInner = p => p.photo ? `<img src="${p.photo}" alt="">` : '<div class="ph">📦<small>Aucune photo</small></div>';
+
+/* ====== Routage ====== */
+const view = $('#view');
+function route() {
+  if (!$('#scanOv').hidden) closeScanner();
+  const parts = (location.hash.slice(1) || '/').split('/').filter(Boolean);
+  window.scrollTo(0, 0);
+  if (!parts.length) return viewList();
+  if (parts[0] === 'p') return viewProduct(parts[1]);
+  if (parts[0] === 'new') return viewNew(decodeURIComponent(parts[1] || ''));
+  if (parts[0] === 'settings') return viewSettings();
+  viewList();
+}
+function rerender() { const y = window.scrollY; route(); window.scrollTo(0, y); }
+window.addEventListener('hashchange', route);
+
+/* ====== Liste ====== */
+const listState = { q: '', filter: 'all' };
+function viewList() {
+  setTitle('Stock');
+  const sm = stockMap(), prods = activeProducts();
+  let units = 0, val = 0, low = 0;
+  for (const p of prods) { const s = sm[p.id] || 0; units += Math.max(s, 0); val += Math.max(s, 0) * (+p.buyHT || 0); if (s <= (+p.minStock || 0)) low++; }
+  view.innerHTML = `
+    <div class="summary">
+      <div><b>${prods.length}</b><span>produits</span></div>
+      <div><b>${fmtNum(units)}</b><span>unités en stock</span></div>
+      <div><b>${eur(val)}</b><span>valeur HT (achat)</span></div>
+    </div>
+    <div class="search"><input id="q" type="search" placeholder="Rechercher un nom ou un code…" value="${esc(listState.q)}" autocomplete="off"></div>
+    <div class="chips">${[['all', 'Tous'], ['low', 'Stock bas' + (low ? ' · ' + low : '')], ['zero', 'Rupture']].map(([k, l]) => `<button class="chip${listState.filter === k ? ' on' : ''}" data-f="${k}">${l}</button>`).join('')}</div>
+    <div id="grid" class="grid"></div>`;
+  $('#q').addEventListener('input', e => { listState.q = e.target.value; renderGrid(); });
+  $$('.chip').forEach(b => b.onclick = () => { listState.filter = b.dataset.f; $$('.chip').forEach(x => x.classList.toggle('on', x === b)); renderGrid(); });
+  $('#grid').onclick = e => {
+    const card = e.target.closest('.card'); if (!card) return;
+    const act = e.target.closest('[data-act]');
+    if (act) openMove(card.dataset.id, act.dataset.act); else location.hash = '#/p/' + card.dataset.id;
+  };
+  renderGrid();
+}
+function renderGrid() {
+  const g = $('#grid'); if (!g) return;
+  const sm = stockMap(), q = listState.q.trim().toLowerCase();
+  let prods = activeProducts().filter(p => !q || (p.name || '').toLowerCase().includes(q) || (p.code || '').includes(q));
+  if (listState.filter === 'low') prods = prods.filter(p => (sm[p.id] || 0) <= (+p.minStock || 0));
+  if (listState.filter === 'zero') prods = prods.filter(p => (sm[p.id] || 0) <= 0);
+  prods.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr'));
+  if (!prods.length) { g.innerHTML = `<div class="empty">${activeProducts().length ? 'Aucun produit ne correspond.' : 'Aucun produit pour l\'instant.<br>Touchez <b>Nouveau</b> ou <b>Scanner</b> pour commencer.'}</div>`; return; }
+  g.innerHTML = prods.map(p => { const s = sm[p.id] || 0; return `
+    <article class="card" data-id="${p.id}">
+      <div class="thumb">${p.photo ? `<img src="${p.photo}" alt="" loading="lazy">` : '<span>📦</span>'}</div>
+      <div class="info"><h3>${esc(p.name)}</h3><div class="code">${esc(p.code)}</div>
+        <div class="price">${eur(ttc(p.sellHT, p.tva))} <small>TTC</small> · ${eur(p.sellHT)} <small>HT</small></div></div>
+      <div class="stock ${stockCls(s, p)}"><b>${fmtNum(s)}</b><small>en stock</small></div>
+      <div class="cact"><button class="btn in" data-act="in">＋ Entrée</button><button class="btn out" data-act="out">− Sortie</button></div>
+    </article>`; }).join('');
+}
+
+/* ====== Fiche produit (formulaire) ====== */
+function productForm(p, isNew) {
+  const opts = TVA_RATES.map(r => `<option value="${r}"${+p.tva === r ? ' selected' : ''}>${String(r).replace('.', ',')} %</option>`).join('');
+  return `
+  <div class="photo-wrap">
+    <div class="photo" id="photo">${photoInner(p)}</div>
+    <div class="photo-btns">
+      <button type="button" class="btn" id="takePhoto">📷 Photo</button>
+      <button type="button" class="btn" id="pickPhoto">🖼️ Galerie</button>
+      <button type="button" class="btn ghost" id="rmPhoto"${p.photo ? '' : ' hidden'}>Retirer</button>
+    </div>
+    <input type="file" accept="image/*" capture="environment" id="camIn" hidden>
+    <input type="file" accept="image/*" id="galIn" hidden>
+  </div>
+  <div class="form" id="pform">
+    <label>Nom du produit<input id="f_name" value="${esc(p.name)}" placeholder="ex. Savon lavande 100 g" autocomplete="off"></label>
+    <label>Code-barres<span class="inline"><input id="f_code" value="${esc(p.code)}" inputmode="numeric" autocomplete="off"><button type="button" class="btn sq" id="genCode" title="Générer un nouveau code">↻</button><button type="button" class="btn sq" id="scanCode" title="Scanner un code existant">${ICON_SCAN}</button></span></label>
+    <label>Taux de TVA<select id="f_tva">${opts}</select></label>
+    <div class="pair"><label>Prix d'achat HT<input id="f_buyHT" inputmode="decimal" value="${fx2(p.buyHT)}"></label><label>Prix d'achat TTC<input id="f_buyTTC" inputmode="decimal" value="${fx2(ttc(p.buyHT, p.tva))}"></label></div>
+    <div class="pair"><label>Prix de vente HT<input id="f_sellHT" inputmode="decimal" value="${fx2(p.sellHT)}"></label><label>Prix de vente TTC<input id="f_sellTTC" inputmode="decimal" value="${fx2(ttc(p.sellHT, p.tva))}"></label></div>
+    <div class="margin" id="margin"></div>
+    <label>Seuil d'alerte (stock bas)<input id="f_min" inputmode="decimal" value="${fmtNum(p.minStock || 0)}"></label>
+    ${isNew ? '<label>Quantité initiale en stock<input id="f_init" inputmode="decimal" value="0"></label>' : ''}
+    <label>Note<textarea id="f_note" rows="2">${esc(p.note || '')}</textarea></label>
+  </div>`;
+}
+function bindForm(p, isNew, onSave) {
+  const v = { buyHT: +p.buyHT || 0, sellHT: +p.sellHT || 0 };
+  const tva = () => num($('#f_tva').value);
+  const showMargin = () => {
+    const m = v.sellHT - v.buyHT;
+    $('#margin').textContent = v.sellHT > 0 ? `Marge : ${eur(m)} HT · taux de marque ${fmtNum(Math.round(m / v.sellHT * 1000) / 10)} %${v.buyHT > 0 ? ' · coef ×' + fmtNum(Math.round(v.sellHT / v.buyHT * 100) / 100) : ''}` : '';
+  };
+  const sync = (k, src) => {
+    const h = $('#f_' + k + 'HT'), t = $('#f_' + k + 'TTC');
+    if (src === 'ht') v[k + 'HT'] = num(h.value);
+    else if (src === 'ttc') v[k + 'HT'] = htFrom(num(t.value), tva());
+    if (src !== 'ht') h.value = fx2(v[k + 'HT']);
+    if (src !== 'ttc') t.value = fx2(ttc(v[k + 'HT'], tva()));
+    showMargin();
+  };
+  ['buy', 'sell'].forEach(k => {
+    $('#f_' + k + 'HT').addEventListener('input', () => sync(k, 'ht'));
+    $('#f_' + k + 'TTC').addEventListener('input', () => sync(k, 'ttc'));
+  });
+  $('#f_tva').addEventListener('change', () => { sync('buy', 'tva'); sync('sell', 'tva'); });
+  showMargin();
+  if (!isNew && onSave) $('#pform').addEventListener('change', e => { if (e.target.id !== 'f_init') onSave(); });
+
+  const target = () => isNew ? p : (DB.products[p.id] || p);
+  const setPhoto = data => { const t = target(); t.photo = data; $('#photo').innerHTML = photoInner(t); $('#rmPhoto').hidden = !data; if (!isNew) { t.updatedAt = nowISO(); touch(); } };
+  const onFile = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; try { setPhoto(await resizeImage(f)); } catch { toast('Image illisible'); } };
+  $('#takePhoto').onclick = () => $('#camIn').click();
+  $('#pickPhoto').onclick = () => $('#galIn').click();
+  $('#camIn').onchange = onFile; $('#galIn').onchange = onFile;
+  $('#rmPhoto').onclick = () => { if (confirm('Retirer la photo ?')) setPhoto(null); };
+  const setCode = c => { $('#f_code').value = c; $('#f_code').dispatchEvent(new Event('change', { bubbles: true })); };
+  $('#genCode').onclick = () => { if (!isNew && !confirm('Remplacer le code-barres actuel par un nouveau code ?')) return; setCode(genCode()); };
+  $('#scanCode').onclick = () => openScanner(setCode);
+
+  return () => ({
+    name: $('#f_name').value.trim(), code: $('#f_code').value.trim(), tva: tva(),
+    buyHT: v.buyHT, sellHT: v.sellHT, minStock: num($('#f_min').value), note: $('#f_note').value.trim()
+  });
+}
+
+/* ====== Nouveau produit ====== */
+function viewNew(code) {
+  if (code) { const ex = findByCode(code); if (ex) { location.replace('#/p/' + ex.id); return; } }
+  setTitle('Nouveau produit');
+  const d = { id: uid(), code: code || genCode(), name: '', photo: null, tva: +S.tva || 0, buyHT: 0, sellHT: 0, minStock: 0, note: '' };
+  view.innerHTML = `<a class="back" href="#/">← Retour</a>
+    <section class="panel"><h2>Nouveau produit</h2>${productForm(d, true)}
+      <div class="bc-box"><svg id="bc"></svg></div>
+      <button class="btn primary block big" id="create" type="button">Créer le produit</button>
+    </section>`;
+  const read = bindForm(d, true);
+  renderBarcode(d.code);
+  $('#f_code').addEventListener('change', () => renderBarcode($('#f_code').value.trim()));
+  if (!code) setTimeout(() => $('#f_name').focus(), 50);
+  $('#create').onclick = () => {
+    const f = read();
+    if (!f.name) { toast('Indiquez un nom'); $('#f_name').focus(); return; }
+    if (!f.code) { toast('Code-barres requis'); return; }
+    if (codeExists(f.code)) { toast('Ce code-barres existe déjà'); return; }
+    const t = nowISO();
+    const p = Object.assign(d, f, { createdAt: t, updatedAt: t, deleted: false });
+    DB.products[p.id] = p;
+    const q = num($('#f_init').value);
+    if (q > 0) { const id = uid(); DB.movements[id] = { id, productId: p.id, dir: 'in', type: 'inventaire', date: t, qty: q, unitHT: p.buyHT, tva: p.tva, note: 'Stock initial', createdAt: t, updatedAt: t, deleted: false }; }
+    touch(); toast('Produit créé'); location.replace('#/p/' + p.id);
+  };
+}
+
+/* ====== Détail produit ====== */
+function viewProduct(id) {
+  const p = DB.products[id];
+  if (!p || p.deleted) { toast('Produit introuvable'); location.replace('#/'); return; }
+  setTitle(p.name || 'Produit');
+  const s = stockOf(id), ms = movementsOf(id);
+  const sales = ms.filter(m => m.dir === 'out' && m.type === 'vente');
+  const soldQ = sales.reduce((a, m) => a + (+m.qty || 0), 0), ca = sales.reduce((a, m) => a + ttc(m.unitHT, m.tva) * m.qty, 0);
+  view.innerHTML = `
+    <a class="back" href="#/">← Liste</a>
+    <section class="panel">
+      <div class="stockbig ${stockCls(s, p)}"><span>En stock</span><b>${fmtNum(s)}</b></div>
+      <div class="row2"><button class="btn in big" id="bIn" type="button">＋ Entrée</button><button class="btn out big" id="bOut" type="button">− Sortie</button></div>
+    </section>
+    <section class="panel"><h2>Fiche produit</h2>${productForm(p, false)}<p class="muted small">Les modifications sont enregistrées automatiquement.</p></section>
+    <section class="panel"><h2>Étiquette</h2>
+      <div class="bc-box lbl"><img id="lbl" alt="Aperçu de l'étiquette"></div>
+      <button class="btn primary block big" id="shareLbl" type="button">📤 Partager l'étiquette</button>
+      <div class="row2" style="margin-top:8px"><button class="btn" id="dlLbl" type="button">⬇️ Télécharger</button><button class="btn" id="print" type="button">🖨️ Imprimer</button></div>
+      <p class="muted small">Format ${labelCfg().w} × ${labelCfg().h} mm · modifiable dans les paramètres. « Partager » envoie l'image à l'appli de votre imprimante (Phomemo, Tiny Print…).</p>
+    </section>
+    <section class="panel"><h2>Historique</h2>${sales.length ? `<p class="muted small">Ventes : ${fmtNum(soldQ)} u. · ${eur(ca)} TTC</p>` : ''}<div id="hist"></div></section>
+    <button class="btn danger block" id="del" type="button">Supprimer le produit</button>`;
+  const read = bindForm(p, false, () => {
+    const cur = DB.products[id]; if (!cur) return;
+    const f = read();
+    if (!f.name) { toast('Le nom ne peut pas être vide'); $('#f_name').value = cur.name; return; }
+    if (!f.code || codeExists(f.code, id)) { toast(f.code ? 'Code-barres déjà utilisé' : 'Code-barres requis'); $('#f_code').value = cur.code; return; }
+    Object.assign(cur, f, { updatedAt: nowISO() }); touch(); setTitle(cur.name); showLabel(cur);
+  });
+  showLabel(p);
+  $('#shareLbl').onclick = () => shareLabel(DB.products[id]);
+  $('#dlLbl').onclick = () => downloadLabel(DB.products[id]);
+  $('#bIn').onclick = () => openMove(id, 'in');
+  $('#bOut').onclick = () => openMove(id, 'out');
+  $('#print').onclick = () => printLabel(DB.products[id]);
+  $('#del').onclick = () => {
+    if (!confirm(`Supprimer « ${p.name} » et tout son historique ?`)) return;
+    const t = nowISO(), cur = DB.products[id];
+    Object.assign(cur, { deleted: true, photo: null, updatedAt: t });
+    for (const m of Object.values(DB.movements)) if (m.productId === id && !m.deleted) Object.assign(m, { deleted: true, updatedAt: t });
+    touch(); toast('Produit supprimé'); location.replace('#/');
+  };
+  const hist = $('#hist');
+  hist.innerHTML = ms.length ? ms.map(m => { const u = ttc(m.unitHT, m.tva); return `
+    <div class="mv ${m.dir}">
+      <div class="mvl"><b>${m.dir === 'in' ? '+' : '−'}${fmtNum(m.qty)}</b> ${esc(TYPES[m.dir][m.type] || m.type)}<small>${fmtDate(m.date)}${m.note ? ' · ' + esc(m.note) : ''}</small></div>
+      <div class="mvr">${eur(u)} /u TTC<br><b>${eur(u * m.qty)}</b> TTC<br><span class="muted">${eur(m.unitHT * m.qty)} HT</span></div>
+      <button class="x" data-del="${m.id}" aria-label="Supprimer">✕</button>
+    </div>`; }).join('') : '<p class="muted">Aucun mouvement pour l\'instant.</p>';
+  hist.onclick = e => {
+    const b = e.target.closest('[data-del]'); if (!b) return;
+    const m = DB.movements[b.dataset.del]; if (!m || !confirm('Supprimer ce mouvement ? Le stock sera recalculé.')) return;
+    Object.assign(m, { deleted: true, updatedAt: nowISO() }); touch(); rerender();
+  };
+}
+
+/* ====== Fenêtre Entrée / Sortie ====== */
+let mv = null;
+const defaultPrice = (p, dir, type) => ((dir === 'out' && type === 'vente') || (dir === 'in' && type === 'retour') ? +p.sellHT : +p.buyHT) || 0;
+function openMove(pid, dir) {
+  const p = DB.products[pid]; if (!p) return;
+  const types = TYPES[dir];
+  mv = { p, dir, type: Object.keys(types)[0], tva: +p.tva || 0, u: 0 };
+  mv.u = defaultPrice(p, dir, mv.type);
+  const dlg = $('#mvDlg');
+  dlg.className = dir;
+  $('#mvTitle').textContent = dir === 'in' ? 'Entrée en stock' : 'Sortie de stock';
+  $('#mvOk').className = 'btn ' + dir;
+  $('#mvProd').textContent = `${p.name} · stock actuel : ${fmtNum(stockOf(pid))}`;
+  $('#mvTypes').innerHTML = Object.entries(types).map(([k, l]) => `<button type="button" data-t="${k}" class="${k === mv.type ? 'on' : ''}">${l}</button>`).join('');
+  $('#m_date').value = localDT();
+  $('#m_qty').value = '1';
+  $('#m_note').value = '';
+  $('#m_tvaLbl').textContent = `TVA ${String(mv.tva).replace('.', ',')} % · prix par défaut repris de la fiche, modifiable`;
+  mvRecalc();
+  dlg.showModal();
+}
+function mvRecalc(field) {
+  const q = num($('#m_qty').value), t = mv.tva;
+  if (field === 'uht') mv.u = num($('#m_uht').value);
+  else if (field === 'uttc') mv.u = htFrom(num($('#m_uttc').value), t);
+  else if (field === 'tht') mv.u = q ? num($('#m_tht').value) / q : mv.u;
+  else if (field === 'tttc') mv.u = q ? htFrom(num($('#m_tttc').value), t) / q : mv.u;
+  const vals = { uht: mv.u, uttc: ttc(mv.u, t), tht: mv.u * q, tttc: ttc(mv.u, t) * q };
+  for (const k in vals) if (k !== field) $('#m_' + k).value = fx2(vals[k]);
+}
+function bindMoveDialog() {
+  $('#mvTypes').onclick = e => {
+    const b = e.target.closest('[data-t]'); if (!b) return;
+    mv.type = b.dataset.t; $$('#mvTypes button').forEach(x => x.classList.toggle('on', x === b));
+    mv.u = defaultPrice(mv.p, mv.dir, mv.type); mvRecalc();
+  };
+  ['uht', 'uttc', 'tht', 'tttc'].forEach(k => {
+    $('#m_' + k).addEventListener('input', () => mvRecalc(k));
+    $('#m_' + k).addEventListener('change', () => mvRecalc());
+  });
+  $('#m_qty').addEventListener('input', () => mvRecalc('qty'));
+  $$('[data-q]').forEach(b => b.onclick = () => { $('#m_qty').value = fmtNum(Math.max(0, num($('#m_qty').value) + +b.dataset.q)); mvRecalc('qty'); });
+  $$('#mvDlg input').forEach(i => i.addEventListener('focus', () => { if (i.inputMode === 'decimal') i.select(); }));
+  $('#mvForm').addEventListener('submit', e => { e.preventDefault(); $('#mvOk').click(); });
+  $('#mvCancel').onclick = () => $('#mvDlg').close();
+  $('#mvOk').onclick = () => {
+    const q = num($('#m_qty').value);
+    if (!(q > 0)) { toast('Quantité invalide'); return; }
+    const { p, dir } = mv;
+    if (dir === 'out') { const s = stockOf(p.id); if (q > s && !confirm(`Stock insuffisant (${fmtNum(s)} en stock). Enregistrer quand même ?`)) return; }
+    const dv = $('#m_date').value, t = nowISO(), id = uid();
+    DB.movements[id] = { id, productId: p.id, dir, type: mv.type, date: dv ? new Date(dv).toISOString() : t, qty: q, unitHT: mv.u, tva: mv.tva, note: $('#m_note').value.trim(), createdAt: t, updatedAt: t, deleted: false };
+    $('#mvDlg').close(); touch();
+    toast(`${dir === 'in' ? 'Entrée' : 'Sortie'} enregistrée : ${dir === 'in' ? '+' : '−'}${fmtNum(q)}`);
+    rerender();
+  };
+}
+
+/* ====== Scanner ====== */
+let scanner = null, scanCb = null;
+async function openScanner(cb) {
+  scanCb = cb; $('#scanOv').hidden = false; $('#scanInput').value = '';
+  if (typeof Html5Qrcode === 'undefined') { toast('Lecteur indisponible (connexion internet ?) — saisissez le code'); return; }
+  if (!window.isSecureContext) { toast('La caméra exige une adresse https:// — saisissez le code', 4000); return; }
+  const F = Html5QrcodeSupportedFormats;
+  try {
+    scanner = new Html5Qrcode('reader', { formatsToSupport: [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128, F.CODE_39, F.ITF, F.QR_CODE], experimentalFeatures: { useBarCodeDetectorIfSupported: true }, verbose: false });
+    await scanner.start({ facingMode: 'environment' },
+      { fps: 12, qrbox: (w, h) => ({ width: Math.max(120, Math.floor(Math.min(w * 0.85, 340))), height: Math.max(80, Math.floor(Math.min(h * 0.35, 170))) }) },
+      txt => { if (scanCb) scanDone(String(txt).trim()); }, () => {});
+    if ($('#scanOv').hidden) closeScanner();
+  } catch (e) { toast('Caméra inaccessible : ' + (e && e.message ? e.message : e), 4000); }
+}
+function scanDone(code) { const cb = scanCb; scanCb = null; if (navigator.vibrate) navigator.vibrate(60); closeScanner().then(() => cb && cb(code)); }
+async function closeScanner() {
+  $('#scanOv').hidden = true;
+  const s = scanner; scanner = null;
+  if (s) { try { if (s.isScanning) await s.stop(); s.clear(); } catch {} }
+}
+function onGlobalScan(code) {
+  if (!code) return;
+  const p = findByCode(code);
+  if (p) { location.hash = '#/p/' + p.id; toast(p.name); }
+  else if (confirm(`Code ${code} inconnu.\nCréer un nouveau produit avec ce code ?`)) location.hash = '#/new/' + encodeURIComponent(code);
+}
+
+/* ====== Google Drive ====== */
+let accessToken = null, tokenExp = 0, syncing = false, syncTimer = null, syncState = 'idle', syncErr = '';
+const tokenValid = () => !!accessToken && Date.now() < tokenExp - 60000;
+function waitGIS() {
+  return new Promise((res, rej) => {
+    if (window.google && google.accounts && google.accounts.oauth2) return res();
+    let n = 0; const t = setInterval(() => { if (window.google && google.accounts && google.accounts.oauth2) { clearInterval(t); res(); } else if (++n > 50) { clearInterval(t); rej(new Error('Service Google inaccessible (connexion internet ?)')); } }, 100);
+  });
+}
+async function getToken(interactive) {
+  if (tokenValid()) return accessToken;
+  if (!interactive) throw new Error('Reconnexion Google nécessaire — touchez la pastille de synchro');
+  if (!S.clientId) throw new Error('Renseignez le Client ID dans les paramètres');
+  await waitGIS();
+  return new Promise((res, rej) => {
+    const tc = google.accounts.oauth2.initTokenClient({
+      client_id: S.clientId, scope: SCOPE,
+      callback: r => {
+        if (r.error) { rej(new Error(r.error_description || r.error)); return; }
+        accessToken = r.access_token; tokenExp = Date.now() + (+r.expires_in || 3600) * 1000;
+        localStorage.setItem(TKEY, JSON.stringify({ t: accessToken, e: tokenExp })); res(accessToken);
+      },
+      error_callback: e => rej(new Error(e.type === 'popup_closed' ? 'Fenêtre Google fermée' : e.type === 'popup_failed_to_open' ? 'Fenêtre Google bloquée par le navigateur' : (e.message || e.type || 'Erreur Google')))
+    });
+    tc.requestAccessToken({ prompt: S.driveOn ? '' : 'consent' });
+  });
+}
+async function api(url, opts = {}) {
+  const r = await fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + accessToken } });
+  if (r.status === 401) { accessToken = null; tokenExp = 0; localStorage.removeItem(TKEY); throw new Error('Session Google expirée — touchez la pastille de synchro'); }
+  return r;
+}
+function mergeColl(local, remote) {
+  let n = 0; const out = { ...local };
+  for (const [id, r] of Object.entries(remote || {})) { const l = out[id]; if (!l || (r.updatedAt || '') > (l.updatedAt || '')) { out[id] = r; n++; } }
+  return [out, n];
+}
+const isEditing = () => { const a = document.activeElement; return (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) || $('#mvDlg').open || !$('#scanOv').hidden; };
+function scheduleSync() { if (!S.driveOn || !S.autoSync || !tokenValid()) return; clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(false), 2500); }
+async function syncNow(interactive) {
+  if (syncing) return;
+  syncing = true; syncState = 'busy'; syncErr = ''; updateBadge();
+  const v0 = ver;
+  try {
+    await getToken(interactive);
+    const base = 'https://www.googleapis.com/drive/v3/files';
+    let fileId = S.fileId;
+    if (fileId) { const r = await api(`${base}/${fileId}?fields=id,trashed`); if (!r.ok || (await r.json()).trashed) fileId = null; }
+    if (!fileId) {
+      const q = encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
+      const r = await api(`${base}?q=${q}&spaces=drive&orderBy=modifiedTime%20desc&fields=files(id)`);
+      if (!r.ok) throw new Error('Drive : erreur ' + r.status);
+      const j = await r.json(); fileId = (j.files && j.files[0] && j.files[0].id) || null;
+    }
+    let changed = 0;
+    if (fileId) {
+      const r = await api(`${base}/${fileId}?alt=media`);
+      if (r.ok) { const remote = await r.json().catch(() => null); if (remote) { let n; [DB.products, n] = mergeColl(DB.products, remote.products); changed += n; [DB.movements, n] = mergeColl(DB.movements, remote.movements); changed += n; } }
+    }
+    const body = JSON.stringify({ app: 'gestion-stock', version: 1, savedAt: nowISO(), products: DB.products, movements: DB.movements });
+    if (fileId) {
+      const r = await api(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
+      if (!r.ok) throw new Error('Envoi vers Drive : erreur ' + r.status);
+    } else {
+      const bd = 'stockapp' + Date.now();
+      const mp = `--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: FILE_NAME, mimeType: 'application/json' })}\r\n--${bd}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${bd}--`;
+      const r = await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + bd }, body: mp });
+      if (!r.ok) throw new Error('Création du fichier Drive : erreur ' + r.status);
+      fileId = (await r.json()).id;
+    }
+    S.fileId = fileId; S.lastSync = nowISO(); if (ver === v0) S.dirty = false; saveS();
+    if (changed) await persist();
+    syncState = 'idle';
+    if (changed && !isEditing()) rerender();
+    if (interactive) toast(changed ? `Synchronisé · ${changed} mise(s) à jour reçue(s)` : 'Synchronisé');
+  } catch (e) { syncState = 'error'; syncErr = e.message; if (interactive) toast(e.message, 4000); }
+  finally { syncing = false; updateBadge(); if (ver !== v0) scheduleSync(); }
+}
+function updateBadge() {
+  const b = $('#syncBadge'); let cls, txt;
+  if (!S.driveOn) { cls = 'off'; txt = 'Local'; }
+  else if (syncState === 'busy') { cls = 'busy'; txt = 'Synchro…'; }
+  else if (syncState === 'error') { cls = 'err'; txt = 'Erreur'; }
+  else if (S.dirty) { cls = 'dirty'; txt = 'À synchroniser'; }
+  else { cls = 'ok'; txt = 'Synchronisé'; }
+  b.className = 'badge ' + cls; b.querySelector('span').textContent = txt;
+  b.title = syncErr || (S.lastSync ? 'Dernière synchro : ' + fmtDate(S.lastSync) : '');
+  const st = $('#s_stat'); if (st) st.innerHTML = driveStatusHTML();
+}
+function driveStatusHTML() {
+  if (!S.driveOn) return '<span class="dot"></span> Non connecté — les données restent uniquement sur cet appareil.';
+  return `<span class="dot ${syncState === 'error' ? 'err' : S.dirty ? 'dirty' : 'ok'}"></span> Connecté à Google Drive${tokenValid() ? '' : ' (session à renouveler — touchez Synchroniser)'}<br><small class="muted">${S.lastSync ? 'Dernière synchro : ' + fmtDate(S.lastSync) : 'Jamais synchronisé'}${syncErr ? ' · ' + esc(syncErr) : ''}</small>`;
+}
+
+/* ====== Export / import ====== */
+function download(name, content, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type })); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+const csvCell = v => { const s = String(v ?? ''); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+const dec = n => fx2(n).replace('.', ',');
+const toCSV = rows => '\ufeff' + rows.map(r => r.map(csvCell).join(';')).join('\r\n');
+const today = () => new Date().toISOString().slice(0, 10);
+/* ====== Totaux ====== */
+function stockTotals() {
+  const sm = stockMap(), t = { refs: 0, units: 0, buyHT: 0, buyTTC: 0, sellHT: 0, sellTTC: 0 };
+  for (const p of activeProducts()) {
+    const s = Math.max(sm[p.id] || 0, 0);
+    t.refs++; t.units += s;
+    t.buyHT += s * (+p.buyHT || 0); t.buyTTC += s * ttc(p.buyHT, p.tva);
+    t.sellHT += s * (+p.sellHT || 0); t.sellTTC += s * ttc(p.sellHT, p.tva);
+  }
+  return t;
+}
+// Coût d'achat d'une sortie = quantité × prix d'achat HT de la fiche produit
+const costHT = m => (m.qty || 0) * (+(DB.products[m.productId] || {}).buyHT || 0);
+const gainHT = m => (m.dir === 'out' && m.type === 'vente') ? m.unitHT * m.qty - costHT(m) : 0;
+function movesInRange(from, to) {
+  const f = from ? from.toISOString() : '', t = to ? to.toISOString() : '';
+  return Object.values(DB.movements).filter(m => !m.deleted && (!f || m.date >= f) && (!t || m.date < t)).sort((a, b) => a.date.localeCompare(b.date));
+}
+function moveTotals(list) {
+  const T = { n: list.length, in: { q: 0, ht: 0, ttc: 0 }, out: { q: 0, ht: 0, ttc: 0 }, types: {}, venteQ: 0, venteHT: 0, venteTTC: 0, coutHT: 0, gainHT: 0 };
+  for (const dir of ['in', 'out']) for (const k in TYPES[dir]) T.types[dir + '.' + k] = { dir, label: TYPES[dir][k], q: 0, ht: 0, ttc: 0 };
+  for (const m of list) {
+    const ht = m.unitHT * m.qty, tt = ttc(m.unitHT, m.tva) * m.qty, g = T[m.dir], ty = T.types[m.dir + '.' + m.type];
+    g.q += +m.qty; g.ht += ht; g.ttc += tt;
+    if (ty) { ty.q += +m.qty; ty.ht += ht; ty.ttc += tt; }
+    if (m.dir === 'out' && m.type === 'vente') { T.venteQ += +m.qty; T.venteHT += ht; T.venteTTC += tt; T.coutHT += costHT(m); }
+  }
+  T.gainHT = T.venteHT - T.coutHT;
+  return T;
+}
+
+function exportStockCSV() {
+  const sm = stockMap();
+  const rows = [['Code', 'Nom', 'Stock', 'TVA %', 'Achat HT', 'Achat TTC', 'Vente HT', 'Vente TTC', 'Valeur d\'achat HT', 'Valeur d\'achat TTC', 'Valeur vénale HT', 'Valeur vénale TTC', 'Seuil alerte']];
+  activeProducts().sort((a, b) => a.name.localeCompare(b.name, 'fr')).forEach(p => {
+    const s = sm[p.id] || 0, sp = Math.max(s, 0);
+    rows.push([p.code, p.name, fmtNum(s), dec(p.tva), dec(p.buyHT), dec(ttc(p.buyHT, p.tva)), dec(p.sellHT), dec(ttc(p.sellHT, p.tva)),
+      dec(sp * p.buyHT), dec(sp * ttc(p.buyHT, p.tva)), dec(sp * p.sellHT), dec(sp * ttc(p.sellHT, p.tva)), fmtNum(p.minStock || 0)]);
+  });
+  const t = stockTotals();
+  rows.push([]);
+  rows.push(['TOTAL', `${t.refs} références`, fmtNum(t.units), '', '', '', '', '', dec(t.buyHT), dec(t.buyTTC), dec(t.sellHT), dec(t.sellTTC), '']);
+  rows.push(['Marge potentielle', '', '', '', '', '', '', '', '', '', dec(t.sellHT - t.buyHT), dec(t.sellTTC - t.buyTTC), '']);
+  download(`stock-${today()}.csv`, toCSV(rows), 'text/csv;charset=utf-8');
+}
+function exportMovesCSV(from, to) {
+  const list = movesInRange(from, to);
+  const rows = [['Date', 'Code', 'Produit', 'Sens', 'Type', 'Quantité', 'PU HT', 'PU TTC', 'Total HT', 'Total TTC', 'TVA %', 'Gain HT (ventes)', 'Note']];
+  list.forEach(m => {
+    const p = DB.products[m.productId] || {}, isSale = m.dir === 'out' && m.type === 'vente';
+    rows.push([fmtDate(m.date), p.code || '', p.name || '', m.dir === 'in' ? 'Entrée' : 'Sortie', TYPES[m.dir][m.type] || m.type, fmtNum(m.qty), dec(m.unitHT), dec(ttc(m.unitHT, m.tva)), dec(m.unitHT * m.qty), dec(ttc(m.unitHT, m.tva) * m.qty), dec(m.tva), isSale ? dec(gainHT(m)) : '', m.note || '']);
+  });
+  const T = moveTotals(list);
+  const line = (label, q, ht, tt, gain = '') => [label, '', '', '', '', q === '' ? '' : fmtNum(q), '', '', ht === '' ? '' : dec(ht), tt === '' ? '' : dec(tt), '', gain === '' ? '' : dec(gain), ''];
+  rows.push([]);
+  for (const ty of Object.values(T.types)) if (ty.q) rows.push(line(`Total ${ty.dir === 'in' ? 'entrées' : 'sorties'} – ${ty.label}`, ty.q, ty.ht, ty.ttc));
+  rows.push(line('TOTAL ENTRÉES', T.in.q, T.in.ht, T.in.ttc));
+  rows.push(line('TOTAL SORTIES', T.out.q, T.out.ht, T.out.ttc));
+  rows.push(line('Prix total de vente', T.venteQ, T.venteHT, T.venteTTC));
+  rows.push(line('Coût d\'achat des articles vendus', T.venteQ, T.coutHT, ''));
+  rows.push(line('MONTANT TOTAL GAGNÉ (marge HT)', '', '', '', T.gainHT));
+  const suffix = from || to ? `-${(from || new Date(0)).toISOString().slice(0, 10)}_${to ? new Date(to - 1).toISOString().slice(0, 10) : today()}` : `-${today()}`;
+  download(`mouvements${suffix}.csv`, toCSV(rows), 'text/csv;charset=utf-8');
+}
+
+/* ====== Fenêtre des totaux ====== */
+const trow = (l, ...v) => `<tr><th>${l}</th>${v.map(x => `<td>${x}</td>`).join('')}</tr>`;
+function showStockTotals() {
+  const t = stockTotals();
+  $('#infoTitle').textContent = 'Totaux du stock';
+  $('#infoBody').innerHTML = `
+    <div class="kpis"><div><small>Références</small><b>${t.refs}</b></div><div><small>Unités en stock</small><b>${fmtNum(t.units)}</b></div></div>
+    <table class="tt"><thead><tr><th></th><th>HT</th><th>TTC</th></tr></thead><tbody>
+      ${trow('Valeur d\'achat', eur(t.buyHT), eur(t.buyTTC))}
+      ${trow('Valeur vénale', eur(t.sellHT), eur(t.sellTTC))}
+      ${trow('<b>Marge potentielle</b>', `<b>${eur(t.sellHT - t.buyHT)}</b>`, `<b>${eur(t.sellTTC - t.buyTTC)}</b>`)}
+    </tbody></table>
+    <p class="muted small">Valeur d'achat = stock × prix d'achat ; valeur vénale = stock × prix de vente. Les stocks négatifs comptent pour zéro.</p>
+    <button class="btn block" id="infoCsv" type="button">📄 Exporter le stock (CSV)</button>`;
+  $('#infoCsv').onclick = exportStockCSV;
+  $('#infoDlg').showModal();
+}
+function periodRange(k) {
+  const n = new Date(), day = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  switch (k) {
+    case 'today': return [day, null];
+    case '7d': { const a = new Date(day); a.setDate(a.getDate() - 6); return [a, null]; }
+    case 'month': return [new Date(n.getFullYear(), n.getMonth(), 1), null];
+    case 'lastmonth': return [new Date(n.getFullYear(), n.getMonth() - 1, 1), new Date(n.getFullYear(), n.getMonth(), 1)];
+    case 'year': return [new Date(n.getFullYear(), 0, 1), null];
+    case 'custom': {
+      const f = $('#tp_from').value, t = $('#tp_to').value;
+      const to = t ? new Date(t + 'T00:00') : null; if (to) to.setDate(to.getDate() + 1);
+      return [f ? new Date(f + 'T00:00') : null, to];
+    }
+    default: return [null, null];
+  }
+}
+let movePeriod = 'all';
+function showMoveTotals() {
+  $('#infoTitle').textContent = 'Totaux des mouvements';
+  const opts = [['all', 'Depuis le début'], ['today', 'Aujourd\'hui'], ['7d', '7 derniers jours'], ['month', 'Ce mois-ci'], ['lastmonth', 'Mois dernier'], ['year', 'Cette année'], ['custom', 'Période personnalisée']];
+  $('#infoBody').innerHTML = `
+    <label>Période<select id="tp_sel">${opts.map(([k, l]) => `<option value="${k}"${k === movePeriod ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+    <div class="pair" id="tp_custom"${movePeriod === 'custom' ? '' : ' hidden'}><label>Du<input type="date" id="tp_from"></label><label>Au<input type="date" id="tp_to"></label></div>
+    <div id="tp_res"></div>
+    <button class="btn block" id="infoCsv" type="button">📄 Exporter ces mouvements (CSV)</button>`;
+  const render = () => {
+    const [from, to] = periodRange(movePeriod), T = moveTotals(movesInRange(from, to));
+    const rate = T.venteHT > 0 ? ` · ${fmtNum(Math.round(T.gainHT / T.venteHT * 1000) / 10)} % des ventes` : '';
+    const typeRows = Object.values(T.types).filter(t => t.q).map(t => trow(`${t.dir === 'in' ? '＋' : '−'} ${t.label}`, fmtNum(t.q), eur(t.ht), eur(t.ttc))).join('');
+    $('#tp_res').innerHTML = !T.n ? '<p class="muted">Aucun mouvement sur cette période.</p>' : `
+      <div class="kpis">
+        <div><small>Prix total de vente</small><b>${eur(T.venteTTC)}</b><small>${eur(T.venteHT)} HT · ${fmtNum(T.venteQ)} u.</small></div>
+        <div class="gain"><small>Montant total gagné</small><b>${eur(T.gainHT)}</b><small>marge HT${rate}</small></div>
+      </div>
+      <table class="tt"><thead><tr><th></th><th>Qté</th><th>HT</th><th>TTC</th></tr></thead><tbody>
+        ${typeRows}
+        ${trow('<b>Total entrées</b>', `<b>${fmtNum(T.in.q)}</b>`, `<b>${eur(T.in.ht)}</b>`, `<b>${eur(T.in.ttc)}</b>`)}
+        ${trow('<b>Total sorties</b>', `<b>${fmtNum(T.out.q)}</b>`, `<b>${eur(T.out.ht)}</b>`, `<b>${eur(T.out.ttc)}</b>`)}
+      </tbody></table>
+      <table class="tt"><tbody>
+        ${trow('Ventes HT', eur(T.venteHT))}
+        ${trow('Coût d\'achat des articles vendus', '− ' + eur(T.coutHT))}
+        ${trow('<b>Montant total gagné (HT)</b>', `<b>${eur(T.gainHT)}</b>`)}
+        ${trow('TVA collectée sur ventes', eur(T.venteTTC - T.venteHT))}
+      </tbody></table>
+      <p class="muted small">Le coût d'achat utilise le prix d'achat actuel de chaque fiche produit.</p>`;
+  };
+  $('#tp_sel').onchange = e => { movePeriod = e.target.value; $('#tp_custom').hidden = movePeriod !== 'custom'; render(); };
+  $('#tp_from').onchange = render; $('#tp_to').onchange = render;
+  $('#infoCsv').onclick = () => { const [f, t] = periodRange(movePeriod); exportMovesCSV(f, t); };
+  render();
+  $('#infoDlg').showModal();
+}
+
+/* ====== Paramètres ====== */
+function bindLabelSettings() {
+  const cfg = labelCfg();
+  const sample = activeProducts()[0] || { name: 'Exemple de produit', code: '200123456789' + ean13Check('200123456789'), sellHT: 10, tva: 20 };
+  const setPreset = () => { const k = `${fmtNum(cfg.w)}x${fmtNum(cfg.h)}`; $('#l_preset').value = LABEL_PRESETS.some(([p]) => p === k) ? k : 'custom'; };
+  const preview = () => { $('#l_prev').src = labelCanvas(sample, cfg).toDataURL('image/png'); };
+  const save = () => { S.label = { ...cfg }; saveS(); preview(); };
+  $('#l_w').value = fmtNum(cfg.w); $('#l_h').value = fmtNum(cfg.h);
+  $('#l_name').checked = cfg.name; $('#l_price').checked = cfg.price; $('#l_rot').checked = cfg.rotate;
+  setPreset(); preview();
+  $('#l_preset').onchange = e => {
+    if (e.target.value === 'custom') { $('#l_w').focus(); return; }
+    const [w, h] = e.target.value.split('x').map(Number); cfg.w = w; cfg.h = h;
+    $('#l_w').value = w; $('#l_h').value = h; save();
+  };
+  const dim = (el, k) => el.onchange = () => {
+    const v = num(el.value);
+    if (v < 15 || v > 150) { toast('Dimension entre 15 et 150 mm'); el.value = fmtNum(cfg[k]); return; }
+    cfg[k] = v; setPreset(); save();
+  };
+  dim($('#l_w'), 'w'); dim($('#l_h'), 'h');
+  $('#l_name').onchange = e => { cfg.name = e.target.checked; save(); };
+  $('#l_price').onchange = e => { cfg.price = e.target.checked; save(); };
+  $('#l_rot').onchange = e => { cfg.rotate = e.target.checked; save(); };
+}
+function viewSettings() {
+  setTitle('Paramètres');
+  const origin = location.origin && location.origin !== 'null' ? location.origin : null;
+  view.innerHTML = `
+  <a class="back" href="#/">← Liste</a>
+  <section class="panel"><h2>Google Drive</h2>
+    <p class="muted small" style="margin-top:0">Les données sont enregistrées sur cet appareil et synchronisées dans le fichier <code>${FILE_NAME}</code> de votre Google Drive. Plusieurs téléphones ou ordinateurs peuvent partager le même stock avec le même compte Google.</p>
+    <label>Client ID OAuth Google<input id="s_cid" value="${esc(S.clientId)}" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false"></label>
+    <div class="status" id="s_stat">${driveStatusHTML()}</div>
+    <div class="row2"><button class="btn primary" id="s_conn" type="button">${S.driveOn ? 'Reconnecter' : 'Connecter Drive'}</button><button class="btn" id="s_sync" type="button">Synchroniser</button></div>
+    <label class="check" style="margin-top:12px"><input type="checkbox" id="s_auto"${S.autoSync ? ' checked' : ''}> Synchroniser automatiquement après chaque modification</label>
+    ${S.driveOn ? '<button class="btn ghost block" id="s_disc" type="button" style="margin-top:8px">Déconnecter Google Drive</button>' : ''}
+    <details><summary>Comment obtenir un Client ID (une seule fois)</summary><ol>
+      <li>Ouvrez <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a> et créez un projet (ex. « Stock »).</li>
+      <li><b>API et services → Bibliothèque</b> : activez <b>Google Drive API</b>.</li>
+      <li><b>Écran de consentement OAuth</b> (« Google Auth Platform ») : type <b>Externe</b>, renseignez le nom de l'appli, puis ajoutez votre adresse Gmail dans <b>Utilisateurs test</b>.</li>
+      <li><b>Identifiants → Créer → ID client OAuth</b>, type <b>Application Web</b>.</li>
+      <li>Dans <b>Origines JavaScript autorisées</b>, ajoutez exactement : ${origin ? `<code>${esc(origin)}</code>` : '<b>l\'adresse https:// où l\'appli est hébergée</b> (impossible depuis un fichier ouvert en local)'}</li>
+      <li>Copiez l'ID client ici, puis touchez <b>Connecter Drive</b>.</li>
+    </ol><p class="muted small">L'appli n'a accès qu'aux fichiers qu'elle crée elle-même dans votre Drive (autorisation « drive.file »).</p></details>
+  </section>
+  <section class="panel"><h2>Général</h2>
+    <label>TVA par défaut des nouveaux produits<select id="s_tva">${TVA_RATES.map(r => `<option value="${r}"${+S.tva === r ? ' selected' : ''}>${String(r).replace('.', ',')} %</option>`).join('')}</select></label>
+  </section>
+  <section class="panel"><h2>Étiquettes</h2><div class="form">
+    <label>Format des étiquettes<select id="l_preset">${LABEL_PRESETS.map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></label>
+    <div class="pair"><label>Largeur (mm)<input id="l_w" inputmode="decimal"></label><label>Hauteur (mm)<input id="l_h" inputmode="decimal"></label></div>
+    <label class="check"><input type="checkbox" id="l_name"> Afficher le nom du produit</label>
+    <label class="check"><input type="checkbox" id="l_price"> Afficher le prix de vente TTC</label>
+    <label class="check"><input type="checkbox" id="l_rot"> Pivoter de 90° (si l'appli de l'imprimante l'imprime de travers)</label>
+    <div class="bc-box lbl"><img id="l_prev" alt="Aperçu"></div>
+  </div></section>
+  <section class="panel"><h2>Totaux</h2><div class="stack">
+    <button class="btn primary block" id="s_tot1" type="button">📦 Totaux du stock (valeur d'achat et vénale)</button>
+    <button class="btn primary block" id="s_tot2" type="button">💶 Totaux des mouvements (ventes et gains)</button>
+  </div></section>
+  <section class="panel"><h2>Exports & sauvegarde</h2><div class="stack">
+    <button class="btn block" id="s_csv1" type="button">📄 État du stock (CSV / Excel)</button>
+    <button class="btn block" id="s_csv2" type="button">📄 Journal des mouvements (CSV / Excel)</button>
+    <button class="btn block" id="s_exp" type="button">💾 Sauvegarde complète (JSON)</button>
+    <button class="btn block" id="s_imp" type="button">📥 Importer une sauvegarde</button>
+    <input type="file" id="s_impIn" accept="application/json,.json" hidden>
+  </div></section>
+  <section class="panel"><h2>Cet appareil</h2>
+    <p class="muted small" style="margin-top:0">Efface les données locales. Si Drive est connecté, elles reviendront à la prochaine synchronisation.</p>
+    <button class="btn danger block" id="s_reset" type="button">Effacer les données de cet appareil</button>
+  </section>`;
+  $('#s_cid').addEventListener('change', e => { S.clientId = e.target.value.trim(); saveS(); });
+  $('#s_conn').onclick = async () => {
+    S.clientId = $('#s_cid').value.trim(); saveS();
+    if (!S.clientId) { toast('Collez d\'abord votre Client ID'); return; }
+    if (!origin || !window.isSecureContext) { toast('Ouvrez l\'appli via une adresse https:// pour connecter Drive', 4000); return; }
+    try { accessToken = null; tokenExp = 0; await getToken(true); S.driveOn = true; saveS(); await syncNow(true); viewSettings(); }
+    catch (e) { toast(e.message, 4000); updateBadge(); }
+  };
+  $('#s_sync').onclick = () => { if (!S.driveOn) { toast('Connectez d\'abord Google Drive'); return; } syncNow(true); };
+  $('#s_auto').onchange = e => { S.autoSync = e.target.checked; saveS(); scheduleSync(); };
+  if ($('#s_disc')) $('#s_disc').onclick = () => {
+    if (!confirm('Déconnecter Google Drive ?\nLes données restent sur cet appareil et dans Drive.')) return;
+    try { if (accessToken && window.google && google.accounts) google.accounts.oauth2.revoke(accessToken, () => {}); } catch {}
+    accessToken = null; tokenExp = 0; localStorage.removeItem(TKEY); S.driveOn = false; S.fileId = null; saveS(); updateBadge(); viewSettings(); toast('Déconnecté');
+  };
+  $('#s_tva').onchange = e => { S.tva = num(e.target.value); saveS(); };
+  $('#s_csv1').onclick = exportStockCSV;
+  $('#s_csv2').onclick = () => exportMovesCSV();
+  bindLabelSettings();
+  $('#s_tot1').onclick = showStockTotals;
+  $('#s_tot2').onclick = showMoveTotals;
+  $('#s_exp').onclick = () => download(`stock-sauvegarde-${today()}.json`, JSON.stringify({ app: 'gestion-stock', version: 1, savedAt: nowISO(), products: DB.products, movements: DB.movements }), 'application/json');
+  $('#s_imp').onclick = () => $('#s_impIn').click();
+  $('#s_impIn').onchange = async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    try { const j = JSON.parse(await f.text()); if (!j.products) throw 0; let a, b; [DB.products, a] = mergeColl(DB.products, j.products); [DB.movements, b] = mergeColl(DB.movements, j.movements); touch(); toast(`Import : ${a + b} élément(s) fusionné(s)`); }
+    catch { toast('Fichier de sauvegarde invalide'); }
+  };
+  $('#s_reset').onclick = async () => {
+    if (!confirm('Effacer tous les produits et mouvements de cet appareil ?')) return;
+    if (!S.driveOn && !confirm('Drive n\'est pas connecté : les données seront définitivement perdues. Continuer ?')) return;
+    DB = { products: {}, movements: {} }; S.dirty = false; saveS(); await persist(); updateBadge(); toast('Données locales effacées');
+  };
+}
+
+/* ====== Démarrage ====== */
+async function init() {
+  const t = safeJSON(localStorage.getItem(TKEY)); if (t.t && t.e > Date.now()) { accessToken = t.t; tokenExp = t.e; }
+  try { await idb.open(); const d = await idb.get('db'); if (d && d.products) DB = { products: d.products || {}, movements: d.movements || {} }; }
+  catch (e) { toast('Stockage local indisponible : ' + e.message, 5000); }
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  bindMoveDialog();
+  $('#btnScan').onclick = () => openScanner(onGlobalScan);
+  $('#btnNew').onclick = () => { if (location.hash === '#/new') route(); else location.hash = '#/new'; };
+  $('#btnSettings').onclick = () => { location.hash = '#/settings'; };
+  $('#syncBadge').onclick = () => { if (!S.driveOn) location.hash = '#/settings'; else syncNow(true); };
+  $('#scanClose').onclick = () => { scanCb = null; closeScanner(); };
+  $('#scanManual').onsubmit = e => { e.preventDefault(); const v = $('#scanInput').value.trim(); if (v && scanCb) scanDone(v); };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.driveOn && tokenValid() && !isEditing()) syncNow(false); });
+  route(); updateBadge();
+  if (S.driveOn && tokenValid()) syncNow(false);
+  if (location.protocol === 'file:') toast('Pour la caméra et Google Drive, ouvrez l\'appli via une adresse https://', 6000);
+}
+init();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
