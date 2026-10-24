@@ -1,6 +1,6 @@
 // Service worker : rend l'appli installable et utilisable hors ligne.
 // Changer VERSION à chaque mise à jour importante pour forcer le rafraîchissement du cache.
-const VERSION = 'stock-v1';
+const VERSION = 'stock-v2';
 const SHELL = [
   './',
   './index.html',

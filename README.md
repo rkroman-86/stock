@@ -18,5 +18,9 @@ Ouvrez l'adresse GitHub Pages dans Chrome, puis menu ⋮ → **Installer l'appli
 
 ## Google Drive
 
-Dans Google Cloud Console, l'origine JavaScript autorisée de l'ID client OAuth doit être l'adresse GitHub Pages
-**sans le chemin**, par exemple `https://votrecompte.github.io`.
+Chaque utilisateur connecte **son propre** Google Drive depuis Paramètres → « Connecter Google Drive ».
+L'appli utilise l'autorisation `drive.file` : elle n'accède qu'au fichier qu'elle a créé.
+Voir la [politique de confidentialité](confidentialite.html).
+
+Pour l'éditeur : le Client ID OAuth intégré se trouve dans `index.html` (`BUILTIN_CLIENT_ID`).
+Dans Google Cloud Console, son origine JavaScript autorisée est `https://rkroman-86.github.io`.

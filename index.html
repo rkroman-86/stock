@@ -215,6 +215,11 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 /* ====== Constantes ====== */
 const FILE_NAME = 'gestion-stock-donnees.json';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
+// Client ID OAuth intégré : permet à tous les utilisateurs de connecter LEUR Google Drive sans configuration.
+// Valable uniquement depuis l'adresse officielle (origine autorisée dans Google Cloud).
+const BUILTIN_CLIENT_ID = '';
+const BUILTIN_ORIGIN = 'https://rkroman-86.github.io';
+const effectiveClientId = () => S.clientId || (location.origin === BUILTIN_ORIGIN ? BUILTIN_CLIENT_ID : '');
 const SKEY = 'stock.settings', TKEY = 'stock.token';
 const TYPES = {
   in:  { achat: 'Achat fournisseur', retour: 'Retour client', inventaire: 'Inventaire' },
@@ -667,11 +672,11 @@ function waitGIS() {
 async function getToken(interactive) {
   if (tokenValid()) return accessToken;
   if (!interactive) throw new Error('Reconnexion Google nécessaire — touchez la pastille de synchro');
-  if (!S.clientId) throw new Error('Renseignez le Client ID dans les paramètres');
+  if (!effectiveClientId()) throw new Error('Synchronisation Google Drive pas encore disponible : renseignez un Client ID (Paramètres → options avancées)');
   await waitGIS();
   return new Promise((res, rej) => {
     const tc = google.accounts.oauth2.initTokenClient({
-      client_id: S.clientId, scope: SCOPE,
+      client_id: effectiveClientId(), scope: SCOPE,
       callback: r => {
         if (r.error) { rej(new Error(r.error_description || r.error)); return; }
         accessToken = r.access_token; tokenExp = Date.now() + (+r.expires_in || 3600) * 1000;
@@ -925,20 +930,24 @@ function viewSettings() {
   view.innerHTML = `
   <a class="back" href="#/">← Liste</a>
   <section class="panel"><h2>Google Drive</h2>
-    <p class="muted small" style="margin-top:0">Les données sont enregistrées sur cet appareil et synchronisées dans le fichier <code>${FILE_NAME}</code> de votre Google Drive. Plusieurs téléphones ou ordinateurs peuvent partager le même stock avec le même compte Google.</p>
-    <label>Client ID OAuth Google<input id="s_cid" value="${esc(S.clientId)}" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false"></label>
+    <p class="muted small" style="margin-top:0">Vos données sont enregistrées sur cet appareil et sauvegardées dans <b>votre</b> Google Drive (fichier <code>${FILE_NAME}</code>). Connectez le même compte Google sur plusieurs téléphones ou ordinateurs pour partager le même stock.</p>
     <div class="status" id="s_stat">${driveStatusHTML()}</div>
     <div class="row2"><button class="btn primary" id="s_conn" type="button">${S.driveOn ? 'Reconnecter' : 'Connecter Drive'}</button><button class="btn" id="s_sync" type="button">Synchroniser</button></div>
     <label class="check" style="margin-top:12px"><input type="checkbox" id="s_auto"${S.autoSync ? ' checked' : ''}> Synchroniser automatiquement après chaque modification</label>
     ${S.driveOn ? '<button class="btn ghost block" id="s_disc" type="button" style="margin-top:8px">Déconnecter Google Drive</button>' : ''}
-    <details><summary>Comment obtenir un Client ID (une seule fois)</summary><ol>
-      <li>Ouvrez <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a> et créez un projet (ex. « Stock »).</li>
-      <li><b>API et services → Bibliothèque</b> : activez <b>Google Drive API</b>.</li>
-      <li><b>Écran de consentement OAuth</b> (« Google Auth Platform ») : type <b>Externe</b>, renseignez le nom de l'appli, puis ajoutez votre adresse Gmail dans <b>Utilisateurs test</b>.</li>
-      <li><b>Identifiants → Créer → ID client OAuth</b>, type <b>Application Web</b>.</li>
-      <li>Dans <b>Origines JavaScript autorisées</b>, ajoutez exactement : ${origin ? `<code>${esc(origin)}</code>` : '<b>l\'adresse https:// où l\'appli est hébergée</b> (impossible depuis un fichier ouvert en local)'}</li>
-      <li>Copiez l'ID client ici, puis touchez <b>Connecter Drive</b>.</li>
-    </ol><p class="muted small">L'appli n'a accès qu'aux fichiers qu'elle crée elle-même dans votre Drive (autorisation « drive.file »).</p></details>
+    <p class="muted small">L'appli n'accède qu'au fichier qu'elle a créé dans votre Drive (autorisation « drive.file ») : ni vos autres fichiers, ni l'éditeur de l'appli ne peuvent lire vos données. <a href="confidentialite.html" target="_blank" rel="noopener">Politique de confidentialité</a></p>
+    <details${!BUILTIN_CLIENT_ID && !S.clientId ? ' open' : ''}><summary>Options avancées : utiliser votre propre Client ID</summary>
+      <p class="small">${BUILTIN_CLIENT_ID ? 'Facultatif. Laissez vide pour utiliser la connexion intégrée.' : 'La connexion intégrée n\'est pas encore configurée : vous pouvez utiliser votre propre Client ID Google.'}</p>
+      <label>Client ID OAuth Google<input id="s_cid" value="${esc(S.clientId)}" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false"></label>
+      <ol>
+        <li>Ouvrez <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a> et créez un projet.</li>
+        <li><b>API et services → Bibliothèque</b> : activez <b>Google Drive API</b>.</li>
+        <li><b>Écran de consentement OAuth</b> : type <b>Externe</b>, puis ajoutez votre adresse Gmail dans <b>Utilisateurs test</b>.</li>
+        <li><b>Identifiants → Créer → ID client OAuth</b>, type <b>Application Web</b>.</li>
+        <li><b>Origines JavaScript autorisées</b> : ${origin ? `<code>${esc(origin)}</code>` : '<b>l\'adresse https:// où l\'appli est hébergée</b>'}</li>
+        <li>Collez l'ID client ci-dessus, puis touchez <b>Connecter Google Drive</b>.</li>
+      </ol>
+    </details>
   </section>
   <section class="panel"><h2>Général</h2>
     <label>TVA par défaut des nouveaux produits<select id="s_tva">${TVA_RATES.map(r => `<option value="${r}"${+S.tva === r ? ' selected' : ''}>${String(r).replace('.', ',')} %</option>`).join('')}</select></label>
@@ -969,7 +978,7 @@ function viewSettings() {
   $('#s_cid').addEventListener('change', e => { S.clientId = e.target.value.trim(); saveS(); });
   $('#s_conn').onclick = async () => {
     S.clientId = $('#s_cid').value.trim(); saveS();
-    if (!S.clientId) { toast('Collez d\'abord votre Client ID'); return; }
+    if (!effectiveClientId()) { toast('Connexion intégrée pas encore disponible : collez un Client ID dans les options avancées', 4500); return; }
     if (!origin || !window.isSecureContext) { toast('Ouvrez l\'appli via une adresse https:// pour connecter Drive', 4000); return; }
     try { accessToken = null; tokenExp = 0; await getToken(true); S.driveOn = true; saveS(); await syncNow(true); viewSettings(); }
     catch (e) { toast(e.message, 4000); updateBadge(); }
