@@ -24,3 +24,14 @@ Voir la [politique de confidentialité](confidentialite.html).
 
 Pour l'éditeur : le Client ID OAuth intégré se trouve dans `index.html` (`BUILTIN_CLIENT_ID`).
 Dans Google Cloud Console, son origine JavaScript autorisée est `https://rkroman-86.github.io`.
+
+## APK Android
+
+Le dossier `android/` contient une **Trusted Web Activity** : une petite appli Android qui ouvre
+`https://rkroman-86.github.io/stock/` en plein écran via Chrome (caméra, Google Drive et mises à jour fonctionnent comme sur le web).
+
+- Compilée automatiquement par GitHub Actions à chaque modification de `android/` (ou via *Actions → APK Android → Run workflow*).
+- Téléchargement : <https://github.com/rkroman-86/stock/releases/latest/download/gestion-stock.apk>
+- Signature : `android/release.p12` (chiffré) ; mot de passe dans le secret GitHub `KEYSTORE_PASSWORD`.
+- Plein écran sans barre d'adresse : le fichier `android/assetlinks.json` doit être publié à
+  `https://rkroman-86.github.io/.well-known/assetlinks.json` (dépôt `rkroman-86.github.io`).

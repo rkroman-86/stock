@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.plugyourhome.stock",
+    "sha256_cert_fingerprints": ["2B:FD:B3:2C:BD:85:1D:80:E1:07:E3:6C:FE:CB:83:C7:AF:20:3C:63:EA:EC:8D:08:2C:64:A0:02:96:1E:C6:4A"]
+  }
+}]

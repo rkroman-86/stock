@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appName">Gestion de stock</string>
+    <string name="launcherName">Stock</string>
+    <string name="launchUrl">https://rkroman-86.github.io/stock/</string>
+    <string name="providerAuthority">com.plugyourhome.stock.fileprovider</string>
+    <string name="assetStatements" translatable="false">
+        [{
+            \"relation\": [\"delegate_permission/common.handle_all_urls\"],
+            \"target\": {\"namespace\": \"web\", \"site\": \"https://rkroman-86.github.io\"}
+        }]
+    </string>
+</resources>

@@ -1,0 +1,46 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Numéro de version fourni par GitHub Actions (numéro de compilation), 1 par défaut
+def buildNumber = (project.findProperty('versionCode') ?: '1').toString().toInteger()
+
+android {
+    namespace 'com.plugyourhome.stock'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.plugyourhome.stock'
+        minSdk 21
+        targetSdk 35
+        versionCode buildNumber
+        versionName "1.${buildNumber}"
+    }
+
+    signingConfigs {
+        release {
+            // Clé de signature chiffrée ; le mot de passe vient du secret GitHub KEYSTORE_PASSWORD
+            storeFile file('../release.p12')
+            storeType 'pkcs12'
+            storePassword System.getenv('KEYSTORE_PASSWORD')
+            keyAlias 'stock'
+            keyPassword System.getenv('KEYSTORE_PASSWORD')
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}
