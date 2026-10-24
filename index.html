@@ -214,7 +214,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <script>
 'use strict';
 /* ====== Constantes ====== */
-const APP_VERSION = '11';
+const APP_VERSION = '12';
 const FILE_NAME = 'gestion-stock-donnees.json';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 // Client ID OAuth intégré : permet à tous les utilisateurs de connecter LEUR Google Drive sans configuration.
@@ -895,7 +895,7 @@ function exportMovesCSV(from, to, pid) {
     rows.push(['Stock en fin de période', fmtNum(stockAt(pid, to))]);
     rows.push([]);
   }
-  rows.push(['Date', 'Code', 'Produit', 'Sens', 'Type', 'Quantité', 'PU HT', 'PU TTC', 'Total HT', 'Total TTC', 'TVA %', 'Gain HT (ventes)', 'Note']);
+  rows.push(['Date', 'Code', 'Produit', 'Sens', 'Type', 'Quantité', 'PU HT', 'PU TTC', 'Total HT', 'Total TTC', 'TVA %', 'Bénéfice HT (ventes)', 'Note']);
   list.forEach(m => {
     const p = DB.products[m.productId] || {}, isSale = m.dir === 'out' && m.type === 'vente';
     rows.push([fmtDate(m.date), p.code || '', p.name || '', m.dir === 'in' ? 'Entrée' : 'Sortie', TYPES[m.dir][m.type] || m.type, fmtNum(m.qty), dec(m.unitHT), dec(ttc(m.unitHT, m.tva)), dec(m.unitHT * m.qty), dec(ttc(m.unitHT, m.tva) * m.qty), dec(m.tva), isSale ? dec(gainHT(m)) : '', m.note || '']);
@@ -908,7 +908,7 @@ function exportMovesCSV(from, to, pid) {
   rows.push(line('TOTAL SORTIES', T.out.q, T.out.ht, T.out.ttc));
   rows.push(line('Prix total de vente', T.venteQ, T.venteHT, T.venteTTC));
   rows.push(line('Coût d\'achat des articles vendus', T.venteQ, T.coutHT, ''));
-  rows.push(line('MONTANT TOTAL GAGNÉ (marge HT)', '', '', '', T.gainHT));
+  rows.push(line('BÉNÉFICE TOTAL (HT)', '', '', '', T.gainHT));
   const ymd = d => localDT(d).slice(0, 10);
   const suffix = from || to ? `-${from ? ymd(from) : 'debut'}_${to ? ymd(new Date(to - 1)) : today()}` : `-${today()}`;
   const tag = prod ? '-' + (prod.code || 'produit').replace(/[^\w-]/g, '') : '';
@@ -940,7 +940,7 @@ function showProductExport(pid) {
         ${trow('＋ Entrées', fmtNum(T.in.q))}
         ${trow('− Sorties', fmtNum(T.out.q))}
         ${trow('Stock en fin de période', `<b>${fmtNum(stockAt(pid, to))}</b>`)}
-        ${T.venteQ ? trow('Ventes', `${fmtNum(T.venteQ)} u. · ${eur(T.venteTTC)} TTC`) + trow('Montant gagné (HT)', `<b>${eur(T.gainHT)}</b>`) : ''}
+        ${T.venteQ ? trow('Ventes', `${fmtNum(T.venteQ)} u. · ${eur(T.venteTTC)} TTC`) + trow('Bénéfice (HT)', `<b>${eur(T.gainHT)}</b>`) : ''}
       </tbody></table>`;
     $('#infoCsv').disabled = !list.length;
   };
@@ -1001,7 +1001,7 @@ function showMoveTotals() {
     $('#tp_res').innerHTML = !T.n ? '<p class="muted">Aucun mouvement sur cette période.</p>' : `
       <div class="kpis">
         <div><small>Prix total de vente</small><b>${eur(T.venteTTC)}</b><small>${eur(T.venteHT)} HT · ${fmtNum(T.venteQ)} u.</small></div>
-        <div class="gain"><small>Montant total gagné</small><b>${eur(T.gainHT)}</b><small>marge HT${rate}</small></div>
+        <div class="gain"><small>Bénéfice</small><b>${eur(T.gainHT)}</b><small>HT${rate}</small></div>
       </div>
       <table class="tt"><thead><tr><th></th><th>Qté</th><th>HT</th><th>TTC</th></tr></thead><tbody>
         ${typeRows}
@@ -1011,7 +1011,7 @@ function showMoveTotals() {
       <table class="tt"><tbody>
         ${trow('Ventes HT', eur(T.venteHT))}
         ${trow('Coût d\'achat des articles vendus', '− ' + eur(T.coutHT))}
-        ${trow('<b>Montant total gagné (HT)</b>', `<b>${eur(T.gainHT)}</b>`)}
+        ${trow('<b>Bénéfice (HT)</b>', `<b>${eur(T.gainHT)}</b>`)}
         ${trow('TVA collectée sur ventes', eur(T.venteTTC - T.venteHT))}
       </tbody></table>
       <p class="muted small">Le coût d'achat utilise le prix d'achat actuel de chaque fiche produit.</p>`;
