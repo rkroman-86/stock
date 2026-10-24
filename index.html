@@ -669,27 +669,55 @@ function waitGIS() {
     let n = 0; const t = setInterval(() => { if (window.google && google.accounts && google.accounts.oauth2) { clearInterval(t); res(); } else if (++n > 50) { clearInterval(t); rej(new Error('Service Google inaccessible (connexion internet ?)')); } }, 100);
   });
 }
+let tokenClient = null, tokenClientId = null, tokenPending = null, tokenResolve = null, tokenReject = null, lastRenewFail = 0;
+const authErr = msg => Object.assign(new Error(msg), { auth: true });
 async function getToken(interactive) {
   if (tokenValid()) return accessToken;
-  if (!interactive) throw new Error('Reconnexion Google nécessaire — touchez la pastille de synchro');
+  if (tokenPending) return tokenPending;
+  if (!interactive) throw authErr('Reconnexion Google nécessaire — touchez la pastille de synchro');
   if (!effectiveClientId()) throw new Error('Synchronisation Google Drive pas encore disponible : renseignez un Client ID (Paramètres → options avancées)');
   await waitGIS();
-  return new Promise((res, rej) => {
-    const tc = google.accounts.oauth2.initTokenClient({
-      client_id: effectiveClientId(), scope: SCOPE,
+  if (!tokenClient || tokenClientId !== effectiveClientId()) {
+    tokenClientId = effectiveClientId();
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: tokenClientId, scope: SCOPE,
       callback: r => {
-        if (r.error) { rej(new Error(r.error_description || r.error)); return; }
+        if (r.error) { tokenReject && tokenReject(new Error(r.error_description || r.error)); return; }
         accessToken = r.access_token; tokenExp = Date.now() + (+r.expires_in || 3600) * 1000;
-        localStorage.setItem(TKEY, JSON.stringify({ t: accessToken, e: tokenExp })); res(accessToken);
+        localStorage.setItem(TKEY, JSON.stringify({ t: accessToken, e: tokenExp }));
+        tokenResolve && tokenResolve(accessToken);
       },
-      error_callback: e => rej(new Error(e.type === 'popup_closed' ? 'Fenêtre Google fermée' : e.type === 'popup_failed_to_open' ? 'Fenêtre Google bloquée par le navigateur' : (e.message || e.type || 'Erreur Google')))
+      error_callback: e => tokenReject && tokenReject(new Error(e.type === 'popup_closed' ? 'Fenêtre Google fermée' : e.type === 'popup_failed_to_open' ? 'Fenêtre Google bloquée par le navigateur' : (e.message || e.type || 'Erreur Google')))
     });
-    tc.requestAccessToken({ prompt: S.driveOn ? '' : 'consent' });
-  });
+  }
+  tokenPending = new Promise((res, rej) => { tokenResolve = res; tokenReject = rej; })
+    .finally(() => { tokenPending = tokenResolve = tokenReject = null; });
+  // Déjà autorisé : pas d'écran de consentement ; login_hint évite le choix du compte
+  const opts = { prompt: S.driveOn ? '' : 'consent' };
+  if (S.driveOn && S.email) opts.login_hint = S.email;
+  tokenClient.requestAccessToken(opts);
+  return tokenPending;
+}
+// Mémorise le compte Google utilisé (pour renouveler l'accès sans choisir le compte)
+async function rememberAccount() {
+  try { const r = await api('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)'); if (r.ok) { const j = await r.json(); if (j.user && j.user.emailAddress) { S.email = j.user.emailAddress; saveS(); } } } catch {}
+}
+// Renouvellement automatique : au premier geste de l'utilisateur quand l'accès a expiré (ou va expirer),
+// la fenêtre Google s'ouvre et se referme seule, puis la synchro reprend.
+const NEAR_EXPIRY = 10 * 60 * 1000;
+function needsRenewal() { return S.driveOn && !!effectiveClientId() && !tokenPending && Date.now() - lastRenewFail > 120000 && (!accessToken || Date.now() > tokenExp - NEAR_EXPIRY); }
+function onUserGesture(e) {
+  if (!needsRenewal() || !$('#scanOv').hidden) return;
+  const t = e.target;
+  if (t.closest('#syncBadge, #s_conn, #s_sync')) return;           // ces boutons gèrent déjà la connexion
+  if (t.closest('input, select, textarea, label')) return;         // ne pas interrompre une saisie
+  if (t.closest('dialog') && !t.closest('#mvOk')) return;          // dans la fenêtre Entrée/Sortie : seulement sur « Valider »
+  getToken(true).then(() => { syncState = 'idle'; syncErr = ''; updateBadge(); if (!syncing) syncNow(false); })
+    .catch(() => { lastRenewFail = Date.now(); updateBadge(); });
 }
 async function api(url, opts = {}) {
   const r = await fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + accessToken } });
-  if (r.status === 401) { accessToken = null; tokenExp = 0; localStorage.removeItem(TKEY); throw new Error('Session Google expirée — touchez la pastille de synchro'); }
+  if (r.status === 401) { accessToken = null; tokenExp = 0; localStorage.removeItem(TKEY); throw authErr('Session Google expirée — touchez la pastille de synchro'); }
   return r;
 }
 function mergeColl(local, remote) {
@@ -730,12 +758,13 @@ async function syncNow(interactive) {
       if (!r.ok) throw new Error('Création du fichier Drive : erreur ' + r.status);
       fileId = (await r.json()).id;
     }
+    if (!S.email) rememberAccount();
     S.fileId = fileId; S.lastSync = nowISO(); if (ver === v0) S.dirty = false; saveS();
     if (changed) await persist();
     syncState = 'idle';
     if (changed && !isEditing()) rerender();
     if (interactive) toast(changed ? `Synchronisé · ${changed} mise(s) à jour reçue(s)` : 'Synchronisé');
-  } catch (e) { syncState = 'error'; syncErr = e.message; if (interactive) toast(e.message, 4000); }
+  } catch (e) { if (e.auth && !interactive) { syncState = 'idle'; syncErr = ''; } else { syncState = 'error'; syncErr = e.message; } if (interactive) toast(e.message, 4000); }
   finally { syncing = false; updateBadge(); if (ver !== v0) scheduleSync(); }
 }
 function updateBadge() {
@@ -751,7 +780,7 @@ function updateBadge() {
 }
 function driveStatusHTML() {
   if (!S.driveOn) return '<span class="dot"></span> Non connecté — les données restent uniquement sur cet appareil.';
-  return `<span class="dot ${syncState === 'error' ? 'err' : S.dirty ? 'dirty' : 'ok'}"></span> Connecté à Google Drive${tokenValid() ? '' : ' (session à renouveler — touchez Synchroniser)'}<br><small class="muted">${S.lastSync ? 'Dernière synchro : ' + fmtDate(S.lastSync) : 'Jamais synchronisé'}${syncErr ? ' · ' + esc(syncErr) : ''}</small>`;
+  return `<span class="dot ${syncState === 'error' ? 'err' : S.dirty ? 'dirty' : 'ok'}"></span> Connecté à Google Drive${tokenValid() ? '' : ' (accès renouvelé automatiquement à votre prochain geste)'}<br><small class="muted">${S.lastSync ? 'Dernière synchro : ' + fmtDate(S.lastSync) : 'Jamais synchronisé'}${syncErr ? ' · ' + esc(syncErr) : ''}</small>`;
 }
 
 /* ====== Export / import ====== */
@@ -988,7 +1017,7 @@ function viewSettings() {
   if ($('#s_disc')) $('#s_disc').onclick = () => {
     if (!confirm('Déconnecter Google Drive ?\nLes données restent sur cet appareil et dans Drive.')) return;
     try { if (accessToken && window.google && google.accounts) google.accounts.oauth2.revoke(accessToken, () => {}); } catch {}
-    accessToken = null; tokenExp = 0; localStorage.removeItem(TKEY); S.driveOn = false; S.fileId = null; saveS(); updateBadge(); viewSettings(); toast('Déconnecté');
+    accessToken = null; tokenExp = 0; localStorage.removeItem(TKEY); S.driveOn = false; S.fileId = null; S.email = ''; saveS(); updateBadge(); viewSettings(); toast('Déconnecté');
   };
   $('#s_tva').onchange = e => { S.tva = num(e.target.value); saveS(); };
   $('#s_csv1').onclick = exportStockCSV;
@@ -1023,6 +1052,7 @@ async function init() {
   $('#syncBadge').onclick = () => { if (!S.driveOn) location.hash = '#/settings'; else syncNow(true); };
   $('#scanClose').onclick = () => { scanCb = null; closeScanner(); };
   $('#scanManual').onsubmit = e => { e.preventDefault(); const v = $('#scanInput').value.trim(); if (v && scanCb) scanDone(v); };
+  document.addEventListener('click', onUserGesture, true);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.driveOn && tokenValid() && !isEditing()) syncNow(false); });
   route(); updateBadge();
   if (S.driveOn && tokenValid()) syncNow(false);
