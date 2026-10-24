@@ -710,6 +710,8 @@ function onUserGesture(e) {
   if (!needsRenewal() || !$('#scanOv').hidden) return;
   const t = e.target;
   if (t.closest('#syncBadge, #s_conn, #s_sync')) return;           // ces boutons gèrent déjà la connexion
+  // Boutons qui ouvrent le sélecteur de fichiers, la caméra, le partage ou l'impression : ne pas leur voler le geste
+  if (t.closest('#s_imp, #s_csv1, #s_csv2, #s_exp, #takePhoto, #pickPhoto, #rmPhoto, #btnScan, #scanCode, #shareLbl, #dlLbl, #print, #infoCsv, [type=file]')) return;
   if (t.closest('input, select, textarea, label')) return;         // ne pas interrompre une saisie
   if (t.closest('dialog') && !t.closest('#mvOk')) return;          // dans la fenêtre Entrée/Sortie : seulement sur « Valider »
   getToken(true).then(() => { syncState = 'idle'; syncErr = ''; updateBadge(); if (!syncing) syncNow(false); })
