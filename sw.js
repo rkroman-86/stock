@@ -1,6 +1,6 @@
 // Service worker : rend l'appli installable et utilisable hors ligne.
 // Changer VERSION à chaque mise à jour importante pour forcer le rafraîchissement du cache.
-const VERSION = 'stock-v9';
+const VERSION = 'stock-v10';
 const SHELL = [
   './',
   './index.html',
@@ -45,12 +45,21 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Fichiers de l'appli : réseau d'abord (pour recevoir les mises à jour), cache si hors ligne
+  // Fichiers de l'appli : réseau d'abord pour recevoir les mises à jour,
+  // mais si le réseau ne répond pas en 3 s (mauvaise connexion), on sert la copie en cache.
   if (url.origin === location.origin) {
-    // cache: 'no-cache' : revalide toujours auprès du serveur (évite de rester bloqué sur une ancienne version)
-    e.respondWith(fetch(req, { cache: 'no-cache' }).then(res => {
-      if (res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); }
-      return res;
-    }).catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('./index.html'))));
+    e.respondWith((async () => {
+      const cached = caches.match(req, { ignoreSearch: true }).then(r => r || (req.mode === 'navigate' ? caches.match('./index.html') : undefined));
+      const network = fetch(req, { cache: 'no-cache' }).then(res => {
+        if (res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); }
+        return res;
+      });
+      e.waitUntil(network.catch(() => {}));
+      const timeout = new Promise(r => setTimeout(r, 3000));
+      const first = await Promise.race([network.catch(() => null), timeout.then(() => null)]);
+      if (first) return first;
+      const c = await cached;
+      return c || network;
+    })());
   }
 });

@@ -213,7 +213,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <script>
 'use strict';
 /* ====== Constantes ====== */
-const APP_VERSION = '9';
+const APP_VERSION = '10';
 const FILE_NAME = 'gestion-stock-donnees.json';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 // Client ID OAuth intégré : permet à tous les utilisateurs de connecter LEUR Google Drive sans configuration.
@@ -697,7 +697,10 @@ async function getToken(interactive) {
   const opts = { prompt: S.driveOn ? '' : 'consent' };
   if (S.driveOn && S.email) opts.login_hint = S.email;
   tokenClient.requestAccessToken(opts);
-  return tokenPending;
+  // Google ne répond pas (mauvaise connexion) : on abandonne au bout de 20 s, nouvel essai plus tard
+  const p = tokenPending;
+  setTimeout(() => { if (tokenPending === p && tokenReject) tokenReject(new Error('Google ne répond pas (connexion lente ?) — nouvel essai plus tard')); }, 20000);
+  return p;
 }
 // Mémorise le compte Google utilisé (pour renouveler l'accès sans choisir le compte)
 async function rememberAccount() {
@@ -706,7 +709,13 @@ async function rememberAccount() {
 // Renouvellement automatique : au premier geste de l'utilisateur quand l'accès a expiré (ou va expirer),
 // la fenêtre Google s'ouvre et se referme seule, puis la synchro reprend.
 const NEAR_EXPIRY = 10 * 60 * 1000;
-function needsRenewal() { return S.driveOn && !!effectiveClientId() && !tokenPending && Date.now() - lastRenewFail > 120000 && (!accessToken || Date.now() > tokenExp - NEAR_EXPIRY); }
+function needsRenewal() {
+  if (!S.driveOn || !effectiveClientId() || tokenPending || navigator.onLine === false) return false;
+  if (Date.now() - lastRenewFail < 120000) return false;
+  if (accessToken && Date.now() < tokenExp - NEAR_EXPIRY) return false;
+  // Seulement quand c'est utile : modifications à envoyer, ou dernière synchro de plus de 5 min (récupérer celles des autres appareils)
+  return S.dirty || !S.lastSync || Date.now() - new Date(S.lastSync).getTime() > 5 * 60000;
+}
 function onUserGesture(e) {
   if (!needsRenewal() || !$('#scanOv').hidden) return;
   const t = e.target;
@@ -1224,9 +1233,10 @@ async function init() {
 init();
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {});
-  // Nouvelle version installée pendant l'utilisation : recharger une fois pour l'appliquer
-  let reloaded = false, hadController = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadController || reloaded || isEditing()) return; reloaded = true; location.reload(); });
+  // Nouvelle version installée pendant l'utilisation : pas de rechargement forcé (bloquant avec une mauvaise connexion),
+  // elle s'applique à la prochaine ouverture.
+  let hadController = !!navigator.serviceWorker.controller, told = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !told) { told = true; toast('Nouvelle version prête : elle s\'appliquera à la prochaine ouverture', 4000); } });
 }
 </script>
 </body>
