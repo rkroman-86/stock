@@ -213,7 +213,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <script>
 'use strict';
 /* ====== Constantes ====== */
-const APP_VERSION = '7';
+const APP_VERSION = '8';
 const FILE_NAME = 'gestion-stock-donnees.json';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 // Client ID OAuth intégré : permet à tous les utilisateurs de connecter LEUR Google Drive sans configuration.
@@ -723,6 +723,32 @@ async function api(url, opts = {}) {
   if (r.status === 401) { accessToken = null; tokenExp = 0; localStorage.removeItem(TKEY); throw authErr('Session Google expirée — touchez la pastille de synchro'); }
   return r;
 }
+// Fusionne les produits en double (même code-barres, identifiants différents) :
+// on garde la fiche la plus complète (photo, vrai historique, la plus ancienne),
+// on lui récupère la photo manquante et l'historique réel du doublon, et on retire les ajustements « Import CSV » du doublon.
+function dedupeByCode() {
+  const groups = {};
+  for (const p of activeProducts()) if (p.code) (groups[p.code] = groups[p.code] || []).push(p);
+  const moves = Object.values(DB.movements).filter(m => !m.deleted);
+  const realMoves = id => moves.filter(m => m.productId === id && m.note !== 'Import CSV').length;
+  const t = nowISO(); let n = 0;
+  for (const list of Object.values(groups)) {
+    if (list.length < 2) continue;
+    list.sort((a, b) => (!!b.photo - !!a.photo) || (realMoves(b.id) - realMoves(a.id)) || String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+    const keep = list[0];
+    for (const dup of list.slice(1)) {
+      if (!keep.photo && dup.photo) keep.photo = dup.photo;
+      const keepHasReal = realMoves(keep.id) > 0;
+      for (const m of moves) if (m.productId === dup.id) {
+        if (m.note === 'Import CSV' && keepHasReal) Object.assign(m, { deleted: true, updatedAt: t });
+        else Object.assign(m, { productId: keep.id, updatedAt: t });
+      }
+      Object.assign(dup, { deleted: true, photo: null, updatedAt: t });
+      keep.updatedAt = t; n++;
+    }
+  }
+  return n;
+}
 function mergeColl(local, remote) {
   let n = 0; const out = { ...local };
   for (const [id, r] of Object.entries(remote || {})) { const l = out[id]; if (!l || (r.updatedAt || '') > (l.updatedAt || '')) { out[id] = r; n++; } }
@@ -750,6 +776,7 @@ async function syncNow(interactive) {
       const r = await api(`${base}/${fileId}?alt=media`);
       if (r.ok) { const remote = await r.json().catch(() => null); if (remote) { let n; [DB.products, n] = mergeColl(DB.products, remote.products); changed += n; [DB.movements, n] = mergeColl(DB.movements, remote.movements); changed += n; } }
     }
+    if (dedupeByCode()) { changed++; ver++; }
     const body = JSON.stringify({ app: 'gestion-stock', version: 1, savedAt: nowISO(), products: DB.products, movements: DB.movements });
     if (fileId) {
       const r = await api(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
@@ -1115,7 +1142,7 @@ function viewSettings() {
     let text; try { text = await f.text(); } catch { toast('Fichier illisible'); return; }
     text = text.replace(/^\ufeff/, '');
     if (/^\s*[{[]/.test(text)) {
-      try { const j = JSON.parse(text); if (!j.products) throw 0; let a, b; [DB.products, a] = mergeColl(DB.products, j.products); [DB.movements, b] = mergeColl(DB.movements, j.movements); touch(); toast(`Import : ${a + b} élément(s) fusionné(s)`); }
+      try { const j = JSON.parse(text); if (!j.products) throw 0; let a, b; [DB.products, a] = mergeColl(DB.products, j.products); [DB.movements, b] = mergeColl(DB.movements, j.movements); const d = dedupeByCode(); touch(); toast(`Import : ${a + b} élément(s) fusionné(s)${d ? ` · ${d} doublon(s) regroupé(s)` : ''}`); location.hash = '#/'; }
       catch { toast('Fichier de sauvegarde invalide'); }
       return;
     }
