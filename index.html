@@ -213,7 +213,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <script>
 'use strict';
 /* ====== Constantes ====== */
-const APP_VERSION = '8';
+const APP_VERSION = '9';
 const FILE_NAME = 'gestion-stock-donnees.json';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 // Client ID OAuth intégré : permet à tous les utilisateurs de connecter LEUR Google Drive sans configuration.
@@ -958,6 +958,45 @@ function showMoveTotals() {
   $('#infoDlg').showModal();
 }
 
+/* ====== Import d'une sauvegarde JSON ====== */
+function askImportMode(j) {
+  const np = Object.values(j.products || {}).filter(p => !p.deleted).length;
+  const nph = Object.values(j.products || {}).filter(p => !p.deleted && p.photo).length;
+  $('#infoTitle').textContent = 'Importer la sauvegarde';
+  $('#infoBody').innerHTML = `
+    <p style="margin:0">Cette sauvegarde contient <b>${np}</b> produit(s), dont <b>${nph}</b> avec photo${j.savedAt ? `, enregistrée le ${fmtDate(j.savedAt)}` : ''}.</p>
+    <button class="btn primary block big" id="impReplace" type="button">Remplacer les données de cet appareil</button>
+    <p class="muted small" style="margin:-4px 0 0">Recommandé pour restaurer ou transférer un stock : l'appareil devient identique à la sauvegarde (y compris dans Google Drive s'il est connecté).</p>
+    <button class="btn block" id="impMerge" type="button">Fusionner avec les données actuelles</button>
+    <p class="muted small" style="margin:-4px 0 0">Ajoute les produits et mouvements de la sauvegarde ; les doublons de code-barres sont regroupés.</p>`;
+  $('#impReplace').onclick = () => {
+    if (!confirm('Remplacer toutes les données de cet appareil par cette sauvegarde ?')) return;
+    $('#infoDlg').close(); importBackup(j, true);
+  };
+  $('#impMerge').onclick = () => { $('#infoDlg').close(); importBackup(j, false); };
+  $('#infoDlg').showModal();
+}
+function importBackup(j, replace) {
+  const t = nowISO(), rp = j.products || {}, rm = j.movements || {};
+  if (replace) {
+    // Les données actuelles sont marquées supprimées et la sauvegarde reçoit une date récente,
+    // pour qu'elle l'emporte aussi lors de la synchronisation avec Google Drive.
+    for (const p of Object.values(DB.products)) if (!rp[p.id] && !p.deleted) Object.assign(p, { deleted: true, photo: null, updatedAt: t });
+    for (const m of Object.values(DB.movements)) if (!rm[m.id] && !m.deleted) Object.assign(m, { deleted: true, updatedAt: t });
+    for (const p of Object.values(rp)) DB.products[p.id] = { ...p, updatedAt: t };
+    for (const m of Object.values(rm)) DB.movements[m.id] = { ...m, updatedAt: t };
+    touch(); toast(`Sauvegarde restaurée : ${Object.values(rp).filter(p => !p.deleted).length} produit(s)`);
+  } else {
+    let a, b, ph = 0;
+    [DB.products, a] = mergeColl(DB.products, rp); [DB.movements, b] = mergeColl(DB.movements, rm);
+    // Photo manquante sur l'appareil mais présente dans la sauvegarde : on la reprend toujours
+    for (const r of Object.values(rp)) { const l = DB.products[r.id]; if (r.photo && l && !l.photo && !l.deleted) { l.photo = r.photo; l.updatedAt = t; ph++; } }
+    const d = dedupeByCode();
+    touch(); toast(`Import : ${a + b} élément(s) fusionné(s)${ph ? ` · ${ph} photo(s) récupérée(s)` : ''}${d ? ` · ${d} doublon(s) regroupé(s)` : ''}`);
+  }
+  location.hash = '#/';
+}
+
 /* ====== Import CSV de stock ====== */
 function parseCSV(text) {
   const first = text.split(/\r?\n/).find(l => l.trim()) || '';
@@ -1142,8 +1181,8 @@ function viewSettings() {
     let text; try { text = await f.text(); } catch { toast('Fichier illisible'); return; }
     text = text.replace(/^\ufeff/, '');
     if (/^\s*[{[]/.test(text)) {
-      try { const j = JSON.parse(text); if (!j.products) throw 0; let a, b; [DB.products, a] = mergeColl(DB.products, j.products); [DB.movements, b] = mergeColl(DB.movements, j.movements); const d = dedupeByCode(); touch(); toast(`Import : ${a + b} élément(s) fusionné(s)${d ? ` · ${d} doublon(s) regroupé(s)` : ''}`); location.hash = '#/'; }
-      catch { toast('Fichier de sauvegarde invalide'); }
+      let j; try { j = JSON.parse(text); if (!j || !j.products) throw 0; } catch { toast('Fichier de sauvegarde invalide'); return; }
+      askImportMode(j);
       return;
     }
     importStockCSV(text);
