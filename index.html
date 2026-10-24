@@ -88,7 +88,7 @@ main{max-width:1100px;margin:0 auto;padding:14px 16px calc(96px + env(safe-area-
 .photo{width:100%;aspect-ratio:4/3;max-height:340px;background:var(--surface2);border-radius:12px;overflow:hidden;display:grid;place-items:center}
 .photo img{width:100%;height:100%;object-fit:contain}
 .ph{display:flex;flex-direction:column;align-items:center;font-size:40px;color:var(--muted)}.ph small{font-size:13px}
-.photo-btns{display:flex;gap:8px;margin-top:8px}.photo-btns .btn{flex:1}
+.photo-btns{display:flex;gap:8px;margin-top:8px}.photo-btns .btn{flex:1;white-space:nowrap;padding:10px 8px;min-width:0}
 .form{display:flex;flex-direction:column;gap:12px}
 label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
 label.check{flex-direction:row;align-items:center;gap:10px;color:var(--text);font-weight:500;font-size:14px}
@@ -222,7 +222,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <script>
 'use strict';
 /* ====== Constantes ====== */
-const APP_VERSION = '13';
+const APP_VERSION = '14';
 const FILE_NAME = 'gestion-stock-donnees.json';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 // Client ID OAuth intégré : permet à tous les utilisateurs de connecter LEUR Google Drive sans configuration.
