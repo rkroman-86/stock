@@ -928,6 +928,83 @@ function showMoveTotals() {
   $('#infoDlg').showModal();
 }
 
+/* ====== Import CSV de stock ====== */
+function parseCSV(text) {
+  const first = text.split(/\r?\n/).find(l => l.trim()) || '';
+  const count = c => (first.match(new RegExp('\\' + c, 'g')) || []).length;
+  const sep = [';', '\t', ','].sort((a, b) => count(b) - count(a))[0];
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === sep) { row.push(cell); cell = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+    else cell += ch;
+  }
+  if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+  return rows.map(r => r.map(c => c.trim())).filter(r => r.some(c => c));
+}
+const normH = h => h.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+const CSV_COLS = {
+  code: ['code', 'code barre', 'code barres', 'code a barres', 'codebarre', 'codebarres', 'ean', 'ean13', 'ean 13', 'barcode', 'gtin', 'reference', 'ref'],
+  name: ['nom', 'produit', 'nom du produit', 'designation', 'libelle', 'article', 'name', 'description'],
+  qty: ['stock', 'quantite', 'qte', 'qty', 'quantite en stock', 'stock actuel', 'en stock'],
+  tva: ['tva', 'taux tva', 'taux de tva', 'tva %'],
+  buyHT: ['achat ht', 'prix achat ht', 'prix d achat ht', 'pa ht', 'prix achat', 'prix d achat', 'cout ht', 'cout'],
+  buyTTC: ['achat ttc', 'prix achat ttc', 'prix d achat ttc', 'pa ttc'],
+  sellHT: ['vente ht', 'prix vente ht', 'prix de vente ht', 'pv ht'],
+  sellTTC: ['vente ttc', 'prix vente ttc', 'prix de vente ttc', 'pv ttc', 'prix ttc', 'prix vente', 'prix de vente', 'prix'],
+  min: ['seuil', 'seuil alerte', 'seuil d alerte', 'stock min', 'stock minimum', 'alerte']
+};
+function importStockCSV(text) {
+  const rows = parseCSV(text);
+  if (rows.length < 2) { toast('Fichier CSV vide ou illisible'); return; }
+  const head = rows[0].map(normH), col = {};
+  for (const [k, names] of Object.entries(CSV_COLS)) { const i = head.findIndex(h => names.includes(h)); if (i >= 0) col[k] = i; }
+  if (col.name === undefined && col.code === undefined) { toast('Colonnes introuvables : il faut au moins « Nom » ou « Code » en première ligne', 5000); return; }
+  const cell = (r, k) => col[k] === undefined ? '' : (r[col[k]] || '');
+  const has = (r, k) => cell(r, k) !== '';
+  const sm = stockMap(), seen = new Set(), plan = [];
+  let sciCodes = 0;
+  for (const r of rows.slice(1)) {
+    const name = cell(r, 'name'); let code = cell(r, 'code').replace(/\s/g, '');
+    if (/^(total|marge)/i.test(r[0] || '') || (!name && !code)) continue;
+    if (/^\d+(,\d+)?e\+\d+$/i.test(code)) { sciCodes++; continue; }
+    if (code && seen.has(code)) continue; if (code) seen.add(code);
+    const ex = code ? findByCode(code) : (activeProducts().find(p => p.name.toLowerCase() === name.toLowerCase()));
+    if (!ex && !name) continue;
+    const tva = has(r, 'tva') ? num(cell(r, 'tva')) : ex ? +ex.tva : +S.tva;
+    const priceHT = (h, t) => has(r, h) ? num(cell(r, h)) : has(r, t) ? htFrom(num(cell(r, t)), tva) : null;
+    plan.push({ ex, code, name, tva, buyHT: priceHT('buyHT', 'buyTTC'), sellHT: priceHT('sellHT', 'sellTTC'),
+      min: has(r, 'min') ? num(cell(r, 'min')) : null, qty: has(r, 'qty') ? num(cell(r, 'qty')) : null });
+  }
+  if (!plan.length) { toast(sciCodes ? 'Codes-barres abîmés par Excel (format 2,00E+12) : mettez la colonne Code au format Texte' : 'Aucun produit trouvé dans le fichier', 5000); return; }
+  const nNew = plan.filter(x => !x.ex).length, nUpd = plan.length - nNew;
+  const nAdj = plan.filter(x => x.qty !== null && x.qty !== (x.ex ? (sm[x.ex.id] || 0) : 0)).length;
+  let msg = `Import CSV :\n• ${nNew} nouveau(x) produit(s)\n• ${nUpd} produit(s) existant(s) mis à jour\n• ${nAdj} ajustement(s) de stock (mouvement « Inventaire »)`;
+  if (sciCodes) msg += `\n\n⚠️ ${sciCodes} ligne(s) ignorée(s) : code-barres abîmé par Excel (2,00E+12).`;
+  if (!confirm(msg + '\n\nContinuer ?')) return;
+  const t = nowISO();
+  for (const x of plan) {
+    let p = x.ex;
+    if (!p) {
+      let code = x.code; if (!code || codeExists(code)) code = genCode();
+      p = { id: uid(), code, name: x.name, photo: null, tva: x.tva, buyHT: x.buyHT || 0, sellHT: x.sellHT || 0, minStock: x.min || 0, note: '', createdAt: t, updatedAt: t, deleted: false };
+      DB.products[p.id] = p;
+    } else {
+      if (x.name) p.name = x.name; p.tva = x.tva;
+      if (x.buyHT !== null) p.buyHT = x.buyHT; if (x.sellHT !== null) p.sellHT = x.sellHT; if (x.min !== null) p.minStock = x.min;
+      p.updatedAt = t;
+    }
+    if (x.qty !== null) {
+      const diff = x.qty - (x.ex ? (sm[p.id] || 0) : 0);
+      if (diff) { const id = uid(); DB.movements[id] = { id, productId: p.id, dir: diff > 0 ? 'in' : 'out', type: 'inventaire', date: t, qty: Math.abs(diff), unitHT: +p.buyHT || 0, tva: +p.tva || 0, note: 'Import CSV', createdAt: t, updatedAt: t, deleted: false }; }
+    }
+  }
+  touch(); toast(`Import terminé : ${plan.length} produit(s)`); location.hash = '#/';
+}
+
 /* ====== Paramètres ====== */
 function bindLabelSettings() {
   const cfg = labelCfg();
@@ -997,8 +1074,9 @@ function viewSettings() {
     <button class="btn block" id="s_csv1" type="button">📄 État du stock (CSV / Excel)</button>
     <button class="btn block" id="s_csv2" type="button">📄 Journal des mouvements (CSV / Excel)</button>
     <button class="btn block" id="s_exp" type="button">💾 Sauvegarde complète (JSON)</button>
-    <button class="btn block" id="s_imp" type="button">📥 Importer une sauvegarde</button>
-    <input type="file" id="s_impIn" accept="application/json,.json" hidden>
+    <button class="btn block" id="s_imp" type="button">📥 Importer (sauvegarde JSON ou liste de stock CSV)</button>
+    <input type="file" id="s_impIn" hidden>
+    <p class="muted small" style="margin:0">CSV : une ligne par produit avec des colonnes comme <i>Code, Nom, Stock, TVA, Achat HT, Vente TTC, Seuil alerte</i> (l'export « État du stock » convient). Depuis Excel : <b>Enregistrer sous → CSV</b>. Les produits existants (même code) sont mis à jour et leur stock est ajusté par un mouvement « Inventaire ».</p>
   </div></section>
   <section class="panel"><h2>Cet appareil</h2>
     <p class="muted small" style="margin-top:0">Efface les données locales. Si Drive est connecté, elles reviendront à la prochaine synchronisation.</p>
@@ -1029,8 +1107,15 @@ function viewSettings() {
   $('#s_imp').onclick = () => $('#s_impIn').click();
   $('#s_impIn').onchange = async e => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-    try { const j = JSON.parse(await f.text()); if (!j.products) throw 0; let a, b; [DB.products, a] = mergeColl(DB.products, j.products); [DB.movements, b] = mergeColl(DB.movements, j.movements); touch(); toast(`Import : ${a + b} élément(s) fusionné(s)`); }
-    catch { toast('Fichier de sauvegarde invalide'); }
+    if (/\.(xlsx?|ods|numbers)$/i.test(f.name)) { toast('Fichier Excel : enregistrez-le d\'abord au format CSV (Enregistrer sous → CSV)', 5000); return; }
+    let text; try { text = await f.text(); } catch { toast('Fichier illisible'); return; }
+    text = text.replace(/^\ufeff/, '');
+    if (/^\s*[{[]/.test(text)) {
+      try { const j = JSON.parse(text); if (!j.products) throw 0; let a, b; [DB.products, a] = mergeColl(DB.products, j.products); [DB.movements, b] = mergeColl(DB.movements, j.movements); touch(); toast(`Import : ${a + b} élément(s) fusionné(s)`); }
+      catch { toast('Fichier de sauvegarde invalide'); }
+      return;
+    }
+    importStockCSV(text);
   };
   $('#s_reset').onclick = async () => {
     if (!confirm('Effacer tous les produits et mouvements de cet appareil ?')) return;
