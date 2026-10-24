@@ -137,6 +137,10 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 #reader{flex:1;width:100%;overflow:hidden;border:none!important}
 #reader video{object-fit:cover}
 .scan-manual{display:flex;gap:8px;padding:12px 16px}
+.scan-mode{padding:0 16px 10px;display:flex;flex-direction:column;gap:6px}
+.scan-mode small{color:#bbb;font-size:12px;min-height:15px}
+.seg.dark button{background:#1c1c1c;color:#ddd;border-color:#444}
+.seg.dark button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .scan-manual input{background:#1c1c1c;color:#fff;border-color:#444}
 .kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .kpis div{background:var(--surface2);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
@@ -195,7 +199,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
       <label>Total TTC<input id="m_tttc" inputmode="decimal" autocomplete="off"></label>
     </div>
     <p class="muted small" id="m_tvaLbl" style="margin:-6px 0 0"></p>
-    <label>Note (facultatif)<input id="m_note" placeholder="Fournisseur, client, n° facture…" autocomplete="off"></label>
+    <label>Référence / note<input id="m_note" placeholder="N° de commande, client, facture…" autocomplete="off"></label>
     <div class="row2">
       <button type="button" class="btn" id="mvCancel">Annuler</button>
       <button type="button" class="btn primary" id="mvOk">Valider</button>
@@ -205,6 +209,10 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 
 <div id="scanOv" class="overlay" hidden>
   <div class="scan-top"><b>Scanner un code-barres</b><button class="btn ghost" id="scanClose" type="button">Fermer</button></div>
+  <div class="scan-mode" id="scanModeBox">
+    <div class="seg dark" id="scanMode"><button type="button" data-m="open">Ouvrir la fiche</button><button type="button" data-m="quick">Sortie rapide (vente)</button></div>
+    <small id="scanInfo"></small>
+  </div>
   <div id="reader"></div>
   <form id="scanManual" class="scan-manual"><input id="scanInput" inputmode="numeric" placeholder="ou saisir le code…" autocomplete="off"><button class="btn primary">OK</button></form>
 </div>
@@ -214,7 +222,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <script>
 'use strict';
 /* ====== Constantes ====== */
-const APP_VERSION = '12';
+const APP_VERSION = '13';
 const FILE_NAME = 'gestion-stock-donnees.json';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 // Client ID OAuth intégré : permet à tous les utilisateurs de connecter LEUR Google Drive sans configuration.
@@ -581,10 +589,10 @@ function viewProduct(id) {
 /* ====== Fenêtre Entrée / Sortie ====== */
 let mv = null;
 const defaultPrice = (p, dir, type) => ((dir === 'out' && type === 'vente') || (dir === 'in' && type === 'retour') ? +p.sellHT : +p.buyHT) || 0;
-function openMove(pid, dir) {
+function openMove(pid, dir, opts = {}) {
   const p = DB.products[pid]; if (!p) return;
   const types = TYPES[dir];
-  mv = { p, dir, type: Object.keys(types)[0], tva: +p.tva || 0, u: 0 };
+  mv = { p, dir, type: opts.type || Object.keys(types)[0], tva: +p.tva || 0, u: 0, quick: !!opts.quick };
   mv.u = defaultPrice(p, dir, mv.type);
   const dlg = $('#mvDlg');
   dlg.className = dir;
@@ -594,9 +602,10 @@ function openMove(pid, dir) {
   $('#mvTypes').innerHTML = Object.entries(types).map(([k, l]) => `<button type="button" data-t="${k}" class="${k === mv.type ? 'on' : ''}">${l}</button>`).join('');
   $('#m_date').value = localDT();
   $('#m_qty').value = '1';
-  $('#m_note').value = '';
+  $('#m_note').value = opts.note || '';
   $('#m_tvaLbl').textContent = `TVA ${String(mv.tva).replace('.', ',')} % · prix par défaut repris de la fiche, modifiable`;
   mvRecalc();
+  $('#mvOk').textContent = mv.quick ? 'Valider et scanner le suivant' : 'Valider';
   dlg.showModal();
 }
 function mvRecalc(field) {
@@ -621,8 +630,11 @@ function bindMoveDialog() {
   $('#m_qty').addEventListener('input', () => mvRecalc('qty'));
   $$('[data-q]').forEach(b => b.onclick = () => { $('#m_qty').value = fmtNum(Math.max(0, num($('#m_qty').value) + +b.dataset.q)); mvRecalc('qty'); });
   $$('#mvDlg input').forEach(i => i.addEventListener('focus', () => { if (i.inputMode === 'decimal') i.select(); }));
+  $('#m_note').addEventListener('focus', e => e.target.select());
   $('#mvForm').addEventListener('submit', e => { e.preventDefault(); $('#mvOk').click(); });
   $('#mvCancel').onclick = () => $('#mvDlg').close();
+  // Sortie rapide : à la fermeture de la fenêtre (validée ou annulée), on relance le scanner
+  $('#mvDlg').addEventListener('close', () => { if (mv && mv.quick) { mv.quick = false; setTimeout(() => openScanner(onGlobalScan, true), 150); } });
   $('#mvOk').onclick = () => {
     const q = num($('#m_qty').value);
     if (!(q > 0)) { toast('Quantité invalide'); return; }
@@ -630,6 +642,7 @@ function bindMoveDialog() {
     if (dir === 'out') { const s = stockOf(p.id); if (q > s && !confirm(`Stock insuffisant (${fmtNum(s)} en stock). Enregistrer quand même ?`)) return; }
     const dv = $('#m_date').value, t = nowISO(), id = uid();
     DB.movements[id] = { id, productId: p.id, dir, type: mv.type, date: dv ? new Date(dv).toISOString() : t, qty: q, unitHT: mv.u, tva: mv.tva, note: $('#m_note').value.trim(), createdAt: t, updatedAt: t, deleted: false };
+    if (mv.quick) { S.lastRef = $('#m_note').value.trim(); saveS(); }
     $('#mvDlg').close(); touch();
     toast(`${dir === 'in' ? 'Entrée' : 'Sortie'} enregistrée : ${dir === 'in' ? '+' : '−'}${fmtNum(q)}`);
     rerender();
@@ -638,8 +651,19 @@ function bindMoveDialog() {
 
 /* ====== Scanner ====== */
 let scanner = null, scanCb = null;
-async function openScanner(cb) {
+function todaySales() {
+  const d = localDT().slice(0, 10); let n = 0;
+  for (const m of Object.values(DB.movements)) if (!m.deleted && m.dir === 'out' && m.type === 'vente' && localDT(new Date(m.date)).slice(0, 10) === d) n += +m.qty || 0;
+  return n;
+}
+function renderScanMode() {
+  const quick = S.scanMode === 'quick';
+  $$('#scanMode button').forEach(b => b.classList.toggle('on', b.dataset.m === (quick ? 'quick' : 'open')));
+  $('#scanInfo').textContent = quick ? `Scan → fenêtre de vente prête → Valider → scan suivant · ventes du jour : ${fmtNum(todaySales())} article(s)` : 'Scan → ouverture de la fiche produit';
+}
+async function openScanner(cb, withMode = false) {
   scanCb = cb; $('#scanOv').hidden = false; $('#scanInput').value = '';
+  $('#scanModeBox').hidden = !withMode; if (withMode) renderScanMode();
   if (typeof Html5Qrcode === 'undefined') { toast('Lecteur indisponible (connexion internet ?) — saisissez le code'); return; }
   if (!window.isSecureContext) { toast('La caméra exige une adresse https:// — saisissez le code', 4000); return; }
   const F = Html5QrcodeSupportedFormats;
@@ -660,6 +684,7 @@ async function closeScanner() {
 function onGlobalScan(code) {
   if (!code) return;
   const p = findByCode(code);
+  if (p && S.scanMode === 'quick') { openMove(p.id, 'out', { type: 'vente', quick: true, note: S.lastRef || '' }); return; }
   if (p) { location.hash = '#/p/' + p.id; toast(p.name); }
   else if (confirm(`Code ${code} inconnu.\nCréer un nouveau produit avec ce code ?`)) location.hash = '#/new/' + encodeURIComponent(code);
 }
@@ -914,9 +939,79 @@ function exportMovesCSV(from, to, pid) {
   const tag = prod ? '-' + (prod.code || 'produit').replace(/[^\w-]/g, '') : '';
   download(`mouvements${tag}${suffix}.csv`, toCSV(rows), 'text/csv;charset=utf-8');
 }
+/* ====== Récapitulatif comptable (pour saisie dans Pennylane ou autre logiciel) ====== */
+function exportComptaCSV(from, to) {
+  const list = movesInRange(from, to);
+  const day = m => localDT(new Date(m.date)).slice(0, 10);
+  const dfr = d => d.split('-').reverse().join('/');
+  const isSale = m => m.dir === 'out' && m.type === 'vente', isRet = m => m.dir === 'in' && m.type === 'retour', isDon = m => m.dir === 'out' && m.type === 'don';
+  const pname = m => (DB.products[m.productId] || {}).name || '?';
+  const rows = [['RÉCAPITULATIF COMPTABLE'], ['Période', periodLabel(from, to)], ['Édité le', fmtDate(nowISO())],
+    ['Montants calculés à partir des sorties « Vente » et des entrées « Retour client » ; à rapprocher des encaissements et factures réels.'], []];
+  // A. Par jour et par taux
+  const byDay = {};
+  for (const m of list) {
+    if (!isSale(m) && !isRet(m)) continue;
+    const k = day(m) + '|' + (+m.tva || 0), o = byDay[k] = byDay[k] || { d: day(m), r: +m.tva || 0, q: 0, v: 0, ret: 0 };
+    const ht = m.unitHT * m.qty;
+    if (isSale(m)) { o.q += +m.qty; o.v += ht; } else o.ret += ht;
+  }
+  rows.push(['VENTES PAR JOUR ET PAR TAUX DE TVA']);
+  rows.push(['Date', 'Taux TVA %', 'Articles vendus', 'Ventes HT', 'Retours HT', 'Net HT', 'TVA collectée', 'Net TTC']);
+  const byRate = {};
+  for (const o of Object.values(byDay).sort((a, b) => a.d.localeCompare(b.d) || a.r - b.r)) {
+    const net = o.v - o.ret, tva = net * o.r / 100;
+    rows.push([dfr(o.d), dec(o.r), fmtNum(o.q), dec(o.v), o.ret ? '-' + dec(o.ret) : dec(0), dec(net), dec(tva), dec(net + tva)]);
+    const R = byRate[o.r] = byRate[o.r] || { q: 0, v: 0, ret: 0 }; R.q += o.q; R.v += o.v; R.ret += o.ret;
+  }
+  if (!Object.keys(byDay).length) rows.push(['Aucune vente sur la période']);
+  rows.push([]);
+  // B. Par référence / commande
+  const byRef = {};
+  for (const m of list) {
+    if (!isSale(m) && !isRet(m)) continue;
+    const ref = m.note || '(sans référence)', o = byRef[ref] = byRef[ref] || { d: day(m), q: 0, ht: 0, tva: 0, items: {} };
+    const sg = isSale(m) ? 1 : -1, ht = sg * m.unitHT * m.qty;
+    o.q += sg * m.qty; o.ht += ht; o.tva += ht * (+m.tva || 0) / 100;
+    o.items[pname(m)] = (o.items[pname(m)] || 0) + sg * m.qty;
+  }
+  rows.push(['VENTES PAR RÉFÉRENCE (N° DE COMMANDE)']);
+  rows.push(['Date', 'Référence', 'Articles', 'Total HT', 'TVA', 'Total TTC', 'Détail']);
+  for (const [ref, o] of Object.entries(byRef).sort((a, b) => a[1].d.localeCompare(b[1].d) || a[0].localeCompare(b[0], 'fr')))
+    rows.push([dfr(o.d), ref, fmtNum(o.q), dec(o.ht), dec(o.tva), dec(o.ht + o.tva), Object.entries(o.items).map(([n, q]) => `${fmtNum(q)} × ${n}`).join(' ; ')]);
+  if (!Object.keys(byRef).length) rows.push(['—']);
+  rows.push([]);
+  // C. Dons
+  const dons = list.filter(isDon);
+  rows.push(['DONS (valorisés au prix d\'achat HT)']);
+  rows.push(['Date', 'Produit', 'Quantité', 'Valeur HT', 'Référence / note']);
+  let donsHT = 0;
+  for (const m of dons) { const v = m.qty * (+(DB.products[m.productId] || {}).buyHT || 0); donsHT += v; rows.push([dfr(day(m)), pname(m), fmtNum(m.qty), dec(v), m.note || '']); }
+  if (!dons.length) rows.push(['—']);
+  rows.push([]);
+  // D. Totaux par taux
+  rows.push(['TOTAUX DE LA PÉRIODE PAR TAUX DE TVA']);
+  rows.push(['Taux TVA %', 'Articles vendus', 'Ventes HT', 'Retours HT', 'Net HT', 'TVA collectée', 'Net TTC']);
+  const tot = { q: 0, v: 0, ret: 0, tva: 0 };
+  for (const [r, R] of Object.entries(byRate).sort((a, b) => a[0] - b[0])) {
+    const net = R.v - R.ret, tva = net * r / 100;
+    rows.push([dec(r), fmtNum(R.q), dec(R.v), R.ret ? '-' + dec(R.ret) : dec(0), dec(net), dec(tva), dec(net + tva)]);
+    tot.q += R.q; tot.v += R.v; tot.ret += R.ret; tot.tva += tva;
+  }
+  rows.push(['TOTAL', fmtNum(tot.q), dec(tot.v), tot.ret ? '-' + dec(tot.ret) : dec(0), dec(tot.v - tot.ret), dec(tot.tva), dec(tot.v - tot.ret + tot.tva)]);
+  const T = moveTotals(list);
+  rows.push([]);
+  rows.push(['Coût d\'achat des articles vendus (HT)', dec(T.coutHT)]);
+  rows.push(['Bénéfice sur ventes (HT)', dec(T.gainHT)]);
+  if (dons.length) rows.push(['Valeur des dons (HT, prix d\'achat)', dec(donsHT)]);
+  const ymd = d => localDT(d).slice(0, 10);
+  const suffix = from || to ? `${from ? ymd(from) : 'debut'}_${to ? ymd(new Date(to - 1)) : today()}` : today();
+  download(`recap-comptable-${suffix}.csv`, toCSV(rows), 'text/csv;charset=utf-8');
+}
 function periodLabel(from, to) {
   const d = x => x.toLocaleDateString('fr-FR');
   if (!from && !to) return 'Depuis le début';
+  if (from && d(from) === d(to ? new Date(to - 1) : new Date())) return 'Le ' + d(from);
   return `${from ? 'Du ' + d(from) : 'Depuis le début'}${to ? ' au ' + d(new Date(to - 1)) : ' à aujourd\'hui'}`;
 }
 
@@ -993,7 +1088,9 @@ function showMoveTotals() {
     <label>Période<select id="tp_sel">${opts.map(([k, l]) => `<option value="${k}"${k === movePeriod ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
     <div class="pair" id="tp_custom"${movePeriod === 'custom' ? '' : ' hidden'}><label>Du<input type="date" id="tp_from"></label><label>Au<input type="date" id="tp_to"></label></div>
     <div id="tp_res"></div>
-    <button class="btn block" id="infoCsv" type="button">📄 Exporter ces mouvements (CSV)</button>`;
+    <button class="btn primary block" id="infoCompta" type="button">📒 Récapitulatif comptable (CSV)</button>
+    <p class="muted small" style="margin:-4px 0 0">Ventes par jour et par taux de TVA, par n° de commande, dons et totaux : prêt pour la saisie dans votre logiciel comptable.</p>
+    <button class="btn block" id="infoCsv" type="button">📄 Détail des mouvements (CSV)</button>`;
   const render = () => {
     const [from, to] = periodRange(movePeriod), T = moveTotals(movesInRange(from, to));
     const rate = T.venteHT > 0 ? ` · ${fmtNum(Math.round(T.gainHT / T.venteHT * 1000) / 10)} % des ventes` : '';
@@ -1019,6 +1116,7 @@ function showMoveTotals() {
   $('#tp_sel').onchange = e => { movePeriod = e.target.value; $('#tp_custom').hidden = movePeriod !== 'custom'; render(); };
   $('#tp_from').onchange = render; $('#tp_to').onchange = render;
   $('#infoCsv').onclick = () => { const [f, t] = periodRange(movePeriod); exportMovesCSV(f, t); };
+  $('#infoCompta').onclick = () => { const [f, t] = periodRange(movePeriod); exportComptaCSV(f, t); };
   render();
   $('#infoDlg').showModal();
 }
@@ -1206,6 +1304,7 @@ function viewSettings() {
   </div></section>
   <section class="panel"><h2>Exports & sauvegarde</h2><div class="stack">
     <button class="btn block" id="s_csv1" type="button">📄 État du stock (CSV / Excel)</button>
+    <button class="btn primary block" id="s_compta" type="button">📒 Récapitulatif comptable du jour…</button>
     <button class="btn block" id="s_csv2" type="button">📄 Journal des mouvements (CSV / Excel)</button>
     <button class="btn block" id="s_exp" type="button">💾 Sauvegarde complète (JSON)</button>
     <button class="btn block" id="s_imp" type="button">📥 Importer (sauvegarde JSON ou liste de stock CSV)</button>
@@ -1238,6 +1337,7 @@ function viewSettings() {
   bindLabelSettings();
   $('#s_tot1').onclick = showStockTotals;
   $('#s_tot2').onclick = showMoveTotals;
+  $('#s_compta').onclick = () => { movePeriod = 'today'; showMoveTotals(); };
   $('#s_exp').onclick = () => download(`stock-sauvegarde-${today()}.json`, JSON.stringify({ app: 'gestion-stock', version: 1, savedAt: nowISO(), products: DB.products, movements: DB.movements }), 'application/json');
   $('#s_imp').onclick = () => $('#s_impIn').click();
   $('#s_impIn').onchange = async e => {
@@ -1274,7 +1374,8 @@ async function init() {
   catch (e) { toast('Stockage local indisponible : ' + e.message, 5000); }
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   bindMoveDialog();
-  $('#btnScan').onclick = () => openScanner(onGlobalScan);
+  $('#btnScan').onclick = () => openScanner(onGlobalScan, true);
+  $('#scanMode').onclick = e => { const b = e.target.closest('[data-m]'); if (!b) return; S.scanMode = b.dataset.m; saveS(); renderScanMode(); };
   $('#btnNew').onclick = () => { if (location.hash === '#/new') route(); else location.hash = '#/new'; };
   $('#btnSettings').onclick = () => { location.hash = '#/settings'; };
   $('#syncBadge').onclick = () => { if (!S.driveOn) location.hash = '#/settings'; else syncNow(true); };
