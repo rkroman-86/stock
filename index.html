@@ -100,6 +100,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-
 .margin{font-size:13px;color:var(--muted);margin-top:-4px}
 .bc-box{background:#fff;border-radius:12px;padding:8px;display:flex;justify-content:center;margin:12px 0}
 .bc-box svg{max-width:100%;height:auto}
+.inline.vat select{flex:1}.inline.vat input{width:96px;flex:none;text-align:center}
 .bc-box.lbl{background:var(--surface2);padding:14px}
 .bc-box.lbl img{display:block;max-width:100%;max-height:240px;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.18);border-radius:4px}
 .muted{color:var(--muted)}.small{font-size:13px}
@@ -158,7 +159,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <header>
   <a href="#/" class="brand">📦 <span id="title">Stock</span></a>
   <button id="syncBadge" class="badge off" type="button"><i></i><span>Local</span></button>
-  <button id="btnSettings" class="iconbtn" type="button" aria-label="Paramètres">
+  <button id="btnSettings" class="iconbtn" type="button" aria-label="Paramètres" data-i18n-aria="Paramètres">
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
 </header>
@@ -168,16 +169,16 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <nav class="bottombar">
   <button class="btn primary" id="btnScan" type="button">
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13.5 8v8M17 8v8"/></svg>
-    Scanner
+    <span data-i18n>Scanner</span>
   </button>
-  <button class="btn" id="btnNew" type="button">＋ Nouveau</button>
+  <button class="btn" id="btnNew" type="button">＋ <span data-i18n>Nouveau</span></button>
 </nav>
 
 <dialog id="infoDlg">
   <form method="dialog">
     <h2 id="infoTitle">Totaux</h2>
     <div id="infoBody" class="stack"></div>
-    <button class="btn block" value="close">Fermer</button>
+    <button class="btn block" value="close" data-i18n>Fermer</button>
   </form>
 </dialog>
 
@@ -187,34 +188,34 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
     <p id="mvProd" class="muted small"></p>
     <div class="seg" id="mvTypes"></div>
     <label>Date<input type="datetime-local" id="m_date"></label>
-    <label>Quantité
+    <label><span data-i18n>Quantité</span>
       <span class="qty"><button type="button" class="btn" data-q="-1">−</button><input id="m_qty" inputmode="decimal" autocomplete="off"><button type="button" class="btn" data-q="1">+</button></span>
     </label>
     <div class="pair">
-      <label>Prix unitaire HT<input id="m_uht" inputmode="decimal" autocomplete="off"></label>
-      <label>Prix unitaire TTC<input id="m_uttc" inputmode="decimal" autocomplete="off"></label>
+      <label><span data-i18n>Prix unitaire HT</span><input id="m_uht" inputmode="decimal" autocomplete="off"></label>
+      <label><span data-i18n>Prix unitaire TTC</span><input id="m_uttc" inputmode="decimal" autocomplete="off"></label>
     </div>
     <div class="pair tot">
-      <label>Total HT<input id="m_tht" inputmode="decimal" autocomplete="off"></label>
-      <label>Total TTC<input id="m_tttc" inputmode="decimal" autocomplete="off"></label>
+      <label><span data-i18n>Total HT</span><input id="m_tht" inputmode="decimal" autocomplete="off"></label>
+      <label><span data-i18n>Total TTC</span><input id="m_tttc" inputmode="decimal" autocomplete="off"></label>
     </div>
     <p class="muted small" id="m_tvaLbl" style="margin:-6px 0 0"></p>
-    <label>Référence / note<input id="m_note" placeholder="N° de commande, client, facture…" autocomplete="off"></label>
+    <label><span data-i18n>Référence / note</span><input id="m_note" placeholder="N° de commande, client, facture…" data-i18n-ph="N° de commande, client, facture…" autocomplete="off"></label>
     <div class="row2">
-      <button type="button" class="btn" id="mvCancel">Annuler</button>
+      <button type="button" class="btn" id="mvCancel" data-i18n>Annuler</button>
       <button type="button" class="btn primary" id="mvOk">Valider</button>
     </div>
   </form>
 </dialog>
 
 <div id="scanOv" class="overlay" hidden>
-  <div class="scan-top"><b>Scanner un code-barres</b><button class="btn ghost" id="scanClose" type="button">Fermer</button></div>
+  <div class="scan-top"><b data-i18n>Scanner un code-barres</b><button class="btn ghost" id="scanClose" type="button" data-i18n>Fermer</button></div>
   <div class="scan-mode" id="scanModeBox">
-    <div class="seg dark" id="scanMode"><button type="button" data-m="open">Ouvrir la fiche</button><button type="button" data-m="quick">Sortie rapide (vente)</button></div>
+    <div class="seg dark" id="scanMode"><button type="button" data-m="open" data-i18n>Ouvrir la fiche</button><button type="button" data-m="quick" data-i18n>Sortie rapide (vente)</button></div>
     <small id="scanInfo"></small>
   </div>
   <div id="reader"></div>
-  <form id="scanManual" class="scan-manual"><input id="scanInput" inputmode="numeric" placeholder="ou saisir le code…" autocomplete="off"><button class="btn primary">OK</button></form>
+  <form id="scanManual" class="scan-manual"><input id="scanInput" inputmode="numeric" placeholder="ou saisir le code…" data-i18n-ph="ou saisir le code…" autocomplete="off"><button class="btn primary">OK</button></form>
 </div>
 
 <div id="toast"></div>
@@ -222,7 +223,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <script>
 'use strict';
 /* ====== Constantes ====== */
-const APP_VERSION = '14';
+const APP_VERSION = '15';
 const FILE_NAME = 'gestion-stock-donnees.json';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 // Client ID OAuth intégré : permet à tous les utilisateurs de connecter LEUR Google Drive sans configuration.
@@ -236,6 +237,30 @@ const TYPES = {
   out: { vente: 'Vente', don: 'Don', inventaire: 'Inventaire' }
 };
 const TVA_RATES = [20, 10, 5.5, 2.1, 0];
+const typeLabel = (dir, type) => tr((TYPES[dir] || {})[type] || type);
+// Champ « taux de TVA » : liste des taux connus + « Autre taux… » avec saisie libre.
+// L'input #id porte toujours la valeur (masqué quand un taux connu est choisi).
+function vatField(id, value) {
+  const v = +value || 0, known = TVA_RATES.includes(v);
+  return `<span class="inline vat"><select id="${id}_sel">${TVA_RATES.map(r => `<option value="${r}"${known && v === r ? ' selected' : ''}>${fmtRate(r)} %</option>`).join('')}<option value="custom"${known ? '' : ' selected'}>${tr('Autre taux…')}</option></select><input id="${id}" inputmode="decimal" value="${fmtRate(v)}" placeholder="%" aria-label="${tr('Taux de TVA')} (%)"${known ? ' hidden' : ''}></span>`;
+}
+function bindVatField(id, onChange) {
+  const sel = $('#' + id + '_sel'), inp = $('#' + id);
+  inp.dataset.last = inp.value;
+  const fire = () => { inp.dispatchEvent(new Event('change', { bubbles: true })); if (onChange) onChange(num(inp.value)); };
+  sel.addEventListener('change', e => {
+    e.stopPropagation();
+    if (sel.value === 'custom') { inp.hidden = false; inp.focus(); inp.select(); return; }
+    inp.hidden = true; inp.value = fmtRate(sel.value); inp.dataset.last = inp.value; fire();
+  });
+  inp.addEventListener('change', e => {
+    const r = num(inp.value);
+    if (inp.value.trim() === '' || r < 0 || r > 100) { e.stopImmediatePropagation(); toast(tr('Taux de TVA entre 0 et 100 %')); inp.value = inp.dataset.last || '0'; inp.focus(); return; }
+    inp.value = fmtRate(r); inp.dataset.last = inp.value;
+    if (TVA_RATES.includes(r)) { sel.value = String(r); inp.hidden = true; }
+    if (e.isTrusted && onChange) onChange(r);
+  });
+}
 const ICON_SCAN = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13.5 8v8M17 8v8"/></svg>';
 
 /* ====== Utilitaires ====== */
@@ -246,10 +271,346 @@ const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString
 const nowISO = () => new Date().toISOString();
 const num = v => { const n = parseFloat(String(v ?? '').replace(',', '.').replace(/[\s\u00a0€]/g, '')); return isNaN(n) ? 0 : n; };
 const fx2 = n => (Math.round((+n || 0) * 100) / 100).toFixed(2);
-const eurFmt = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
-const eur = n => eurFmt.format(+n || 0);
-const fmtNum = n => { const v = +n || 0; return Number.isInteger(v) ? String(v) : v.toLocaleString('fr-FR', { maximumFractionDigits: 3 }); };
-const fmtDate = iso => new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+/* ====== Langue (FR / EN) ====== */
+// Dictionnaire anglais : clé = texte français tel qu'écrit dans le code
+const EN = {
+"Autre taux…": "Other rate…",
+"Taux de TVA": "VAT rate",
+"Taux de TVA entre 0 et 100 %": "VAT rate must be between 0 and 100 %",
+"HT": "excl. VAT",
+"TTC": "incl. VAT",
+"Erreur d'enregistrement local : ": "Local save error: ",
+"etiquette": "label",
+"produit": "product",
+"Partage impossible : image téléchargée": "Sharing failed: image downloaded instead",
+"Partage non disponible ici : image téléchargée": "Sharing not available here: image downloaded instead",
+"Fenêtre d'impression bloquée": "Print window blocked",
+"Étiquette": "Label",
+"Aucune photo": "No photo",
+"produits": "products",
+"unités en stock": "units in stock",
+"valeur HT (achat)": "value excl. VAT (cost)",
+"Rechercher un nom ou un code…": "Search by name or code…",
+"Tous": "All",
+"Stock bas": "Low stock",
+"Rupture": "Out of stock",
+"Aucun produit ne correspond.": "No matching product.",
+"Aucun produit pour l'instant.<br>Touchez <b>Nouveau</b> ou <b>Scanner</b> pour commencer.": "No products yet.<br>Tap <b>New</b> or <b>Scan</b> to get started.",
+"en stock": "in stock",
+"Entrée": "Stock in",
+"Sortie": "Stock out",
+"Photo": "Photo",
+"Galerie": "Gallery",
+"Retirer": "Remove",
+"Nom du produit": "Product name",
+"ex. Savon lavande 100 g": "e.g. Lavender soap 100 g",
+"Code-barres": "Barcode",
+"Générer un nouveau code": "Generate a new code",
+"Scanner un code existant": "Scan an existing code",
+"Prix d'achat HT": "Purchase price excl. VAT",
+"Prix d'achat TTC": "Purchase price incl. VAT",
+"Prix de vente HT": "Sale price excl. VAT",
+"Prix de vente TTC": "Sale price incl. VAT",
+"Seuil d'alerte (stock bas)": "Alert threshold (low stock)",
+"Quantité initiale en stock": "Initial stock quantity",
+"Note": "Note",
+"Marge : {m} HT · taux de marque {r} %": "Margin: {m} excl. VAT · margin rate {r} %",
+"coef": "markup",
+"Image illisible": "Unreadable image",
+"Retirer la photo ?": "Remove the photo?",
+"Remplacer le code-barres actuel par un nouveau code ?": "Replace the current barcode with a new code?",
+"Nouveau produit": "New product",
+"Retour": "Back",
+"Créer le produit": "Create product",
+"Indiquez un nom": "Enter a name",
+"Code-barres requis": "Barcode required",
+"Ce code-barres existe déjà": "This barcode already exists",
+"Stock initial": "Initial stock",
+"Produit créé": "Product created",
+"Produit introuvable": "Product not found",
+"Produit": "Product",
+"Liste": "List",
+"En stock": "In stock",
+"Fiche produit": "Product details",
+"Les modifications sont enregistrées automatiquement.": "Changes are saved automatically.",
+"Aperçu de l'étiquette": "Label preview",
+"Partager l'étiquette": "Share label",
+"Télécharger": "Download",
+"Imprimer": "Print",
+"Format {w} × {h} mm · modifiable dans les paramètres. « Partager » envoie l'image à l'appli de votre imprimante (Phomemo, Tiny Print…).": "Size {w} × {h} mm · change it in Settings. “Share” sends the image to your printer’s app (Phomemo, Tiny Print…).",
+"Historique": "History",
+"Ventes : {q} u. · {ca} TTC": "Sales: {q} pcs · {ca} incl. VAT",
+"Exporter les mouvements…": "Export movements…",
+"Supprimer le produit": "Delete product",
+"Le nom ne peut pas être vide": "The name cannot be empty",
+"Code-barres déjà utilisé": "Barcode already in use",
+"Supprimer « {n} » et tout son historique ?": "Delete “{n}” and its whole history?",
+"Produit supprimé": "Product deleted",
+"Supprimer": "Delete",
+"Aucun mouvement pour l'instant.": "No movements yet.",
+"Supprimer ce mouvement ? Le stock sera recalculé.": "Delete this movement? Stock will be recalculated.",
+"Entrée en stock": "Stock in",
+"Sortie de stock": "Stock out",
+"stock actuel :": "current stock:",
+"TVA {r} % · prix par défaut repris de la fiche, modifiable": "VAT {r} % · default price taken from the product, editable",
+"Valider et scanner le suivant": "Save and scan next",
+"Valider": "Save",
+"Quantité invalide": "Invalid quantity",
+"Stock insuffisant ({s} en stock). Enregistrer quand même ?": "Not enough stock ({s} in stock). Save anyway?",
+"Scan → fenêtre de vente prête → Valider → scan suivant · ventes du jour : {n} article(s)": "Scan → sale form ready → Save → next scan · today’s sales: {n} item(s)",
+"Scan → ouverture de la fiche produit": "Scan → opens the product",
+"Lecteur indisponible (connexion internet ?) — saisissez le code": "Scanner unavailable (internet connection?) — type the code",
+"La caméra exige une adresse https:// — saisissez le code": "The camera requires an https:// address — type the code",
+"Caméra inaccessible : ": "Camera unavailable: ",
+"Code {c} inconnu.\nCréer un nouveau produit avec ce code ?": "Unknown code {c}.\nCreate a new product with this code?",
+"Service Google inaccessible (connexion internet ?)": "Google service unreachable (internet connection?)",
+"Reconnexion Google nécessaire — touchez la pastille de synchro": "Google sign-in needed — tap the sync badge",
+"Synchronisation Google Drive pas encore disponible : renseignez un Client ID (Paramètres → options avancées)": "Google Drive sync not available yet: enter a Client ID (Settings → advanced options)",
+"Fenêtre Google fermée": "Google window closed",
+"Fenêtre Google bloquée par le navigateur": "Google window blocked by the browser",
+"Erreur Google": "Google error",
+"Google ne répond pas (connexion lente ?) — nouvel essai plus tard": "Google is not responding (slow connection?) — will retry later",
+"Session Google expirée — touchez la pastille de synchro": "Google session expired — tap the sync badge",
+"Drive : erreur ": "Drive: error ",
+"Envoi vers Drive : erreur ": "Upload to Drive: error ",
+"Création du fichier Drive : erreur ": "Drive file creation: error ",
+"Synchronisé · {n} mise(s) à jour reçue(s)": "Synced · {n} update(s) received",
+"Synchronisé": "Synced",
+"Local": "Local",
+"Synchro…": "Syncing…",
+"Erreur": "Error",
+"À synchroniser": "Not synced",
+"Dernière synchro : ": "Last sync: ",
+"Non connecté — les données restent uniquement sur cet appareil.": "Not connected — data stays on this device only.",
+"Connecté à Google Drive": "Connected to Google Drive",
+"(accès renouvelé automatiquement à votre prochain geste)": "(access renewed automatically on your next tap)",
+"Jamais synchronisé": "Never synced",
+"TOTAL": "TOTAL",
+"références": "items",
+"Marge potentielle": "Potential margin",
+"Période": "Period",
+"Stock en début de période": "Opening stock",
+"Stock en fin de période": "Closing stock",
+"TOTAL ENTRÉES": "TOTAL IN",
+"TOTAL SORTIES": "TOTAL OUT",
+"Prix total de vente": "Total sales",
+"Coût d'achat des articles vendus": "Cost of goods sold",
+"BÉNÉFICE TOTAL (HT)": "TOTAL PROFIT (excl. VAT)",
+"debut": "start",
+"mouvements": "movements",
+"RÉCAPITULATIF COMPTABLE": "ACCOUNTING SUMMARY",
+"Édité le": "Generated on",
+"Montants calculés à partir des sorties « Vente » et des entrées « Retour client » ; à rapprocher des encaissements et factures réels.": "Amounts calculated from “Sale” outflows and “Customer return” inflows; reconcile with actual payments and invoices.",
+"VENTES PAR JOUR ET PAR TAUX DE TVA": "SALES BY DAY AND VAT RATE",
+"Aucune vente sur la période": "No sales in this period",
+"(sans référence)": "(no reference)",
+"VENTES PAR RÉFÉRENCE (N° DE COMMANDE)": "SALES BY REFERENCE (ORDER NO.)",
+"DONS (valorisés au prix d'achat HT)": "DONATIONS (valued at purchase price excl. VAT)",
+"TOTAUX DE LA PÉRIODE PAR TAUX DE TVA": "PERIOD TOTALS BY VAT RATE",
+"Coût d'achat des articles vendus (HT)": "Cost of goods sold (excl. VAT)",
+"Bénéfice sur ventes (HT)": "Profit on sales (excl. VAT)",
+"Valeur des dons (HT, prix d'achat)": "Value of donations (excl. VAT, purchase price)",
+"recap-comptable": "accounting-summary",
+"Depuis le début": "Since the beginning",
+"Le {d}": "On {d}",
+"Du {d}": "From {d}",
+" au {d}": " to {d}",
+" à aujourd'hui": " to today",
+"Exporter les mouvements": "Export movements",
+"Du": "From",
+"Au": "To",
+"Exporter (CSV / Excel)": "Export (CSV / Excel)",
+"Mouvements sur la période": "Movements in period",
+"Entrées": "In",
+"Sorties": "Out",
+"Ventes": "Sales",
+"u.": "pcs",
+"Bénéfice (HT)": "Profit (excl. VAT)",
+"Totaux du stock": "Stock totals",
+"Références": "Items",
+"Unités en stock": "Units in stock",
+"Valeur d'achat": "Cost value",
+"Valeur vénale": "Retail value",
+"Valeur d'achat = stock × prix d'achat ; valeur vénale = stock × prix de vente. Les stocks négatifs comptent pour zéro.": "Cost value = stock × purchase price; retail value = stock × sale price. Negative stock counts as zero.",
+"Exporter le stock (CSV)": "Export stock (CSV)",
+"Totaux des mouvements": "Movement totals",
+"Récapitulatif comptable (CSV)": "Accounting summary (CSV)",
+"Ventes par jour et par taux de TVA, par n° de commande, dons et totaux : prêt pour la saisie dans votre logiciel comptable.": "Sales by day and VAT rate, by order number, donations and totals: ready to enter in your accounting software.",
+"Détail des mouvements (CSV)": "Movement details (CSV)",
+"{p} % des ventes": "{p} % of sales",
+"Aucun mouvement sur cette période.": "No movements in this period.",
+"Bénéfice": "Profit",
+"Qté": "Qty",
+"Total entrées": "Total in",
+"Total sorties": "Total out",
+"Ventes HT": "Sales excl. VAT",
+"TVA collectée sur ventes": "VAT collected on sales",
+"Le coût d'achat utilise le prix d'achat actuel de chaque fiche produit.": "Cost uses each product’s current purchase price.",
+"Importer la sauvegarde": "Import backup",
+"Cette sauvegarde contient <b>{np}</b> produit(s), dont <b>{nph}</b> avec photo": "This backup contains <b>{np}</b> product(s), <b>{nph}</b> with a photo",
+", enregistrée le {d}": ", saved on {d}",
+"Remplacer les données de cet appareil": "Replace this device’s data",
+"Recommandé pour restaurer ou transférer un stock : l'appareil devient identique à la sauvegarde (y compris dans Google Drive s'il est connecté).": "Recommended to restore or transfer stock: the device becomes identical to the backup (including Google Drive if connected).",
+"Fusionner avec les données actuelles": "Merge with current data",
+"Ajoute les produits et mouvements de la sauvegarde ; les doublons de code-barres sont regroupés.": "Adds the backup’s products and movements; duplicate barcodes are merged.",
+"Remplacer toutes les données de cet appareil par cette sauvegarde ?": "Replace all data on this device with this backup?",
+"Sauvegarde restaurée : {n} produit(s)": "Backup restored: {n} product(s)",
+"Import : {n} élément(s) fusionné(s)": "Import: {n} record(s) merged",
+"{n} photo(s) récupérée(s)": "{n} photo(s) recovered",
+"{n} doublon(s) regroupé(s)": "{n} duplicate(s) merged",
+"Fichier CSV vide ou illisible": "CSV file empty or unreadable",
+"Colonnes introuvables : il faut au moins « Nom » ou « Code » en première ligne": "Columns not found: the first row needs at least “Name” or “Code”",
+"Codes-barres abîmés par Excel (format 2,00E+12) : mettez la colonne Code au format Texte": "Barcodes damaged by Excel (2.00E+12 format): set the Code column to Text format",
+"Aucun produit trouvé dans le fichier": "No products found in the file",
+"Import CSV :\n• {a} nouveau(x) produit(s)\n• {b} produit(s) existant(s) mis à jour\n• {c} ajustement(s) de stock (mouvement « Inventaire »)": "CSV import:\n• {a} new product(s)\n• {b} existing product(s) updated\n• {c} stock adjustment(s) (“Stock count” movement)",
+"{n} ligne(s) ignorée(s) : code-barres abîmé par Excel (2,00E+12).": "{n} row(s) skipped: barcode damaged by Excel (2.00E+12).",
+"Continuer ?": "Continue?",
+"Import terminé : {n} produit(s)": "Import complete: {n} product(s)",
+"Exemple de produit": "Sample product",
+"Dimension entre 15 et 150 mm": "Size must be between 15 and 150 mm",
+"Paramètres": "Settings",
+"Langue / Language": "Language / Langue",
+"Vos données sont enregistrées sur cet appareil et sauvegardées dans <b>votre</b> Google Drive (fichier <code>{f}</code>). Connectez le même compte Google sur plusieurs téléphones ou ordinateurs pour partager le même stock.": "Your data is stored on this device and backed up to <b>your</b> Google Drive (file <code>{f}</code>). Connect the same Google account on several phones or computers to share the same stock.",
+"Reconnecter": "Reconnect",
+"Connecter Drive": "Connect Drive",
+"Synchroniser": "Sync now",
+"Synchroniser automatiquement après chaque modification": "Sync automatically after each change",
+"Déconnecter Google Drive": "Disconnect Google Drive",
+"L'appli n'accède qu'au fichier qu'elle a créé dans votre Drive (autorisation « drive.file ») : ni vos autres fichiers, ni l'éditeur de l'appli ne peuvent lire vos données.": "The app only accesses the file it created in your Drive (“drive.file” permission): neither your other files nor the app’s publisher can read your data.",
+"Politique de confidentialité": "Privacy policy (French)",
+"Options avancées : utiliser votre propre Client ID": "Advanced options: use your own Client ID",
+"Facultatif. Laissez vide pour utiliser la connexion intégrée.": "Optional. Leave empty to use the built-in connection.",
+"La connexion intégrée n'est pas encore configurée : vous pouvez utiliser votre propre Client ID Google.": "The built-in connection is not configured yet: you can use your own Google Client ID.",
+"Client ID OAuth Google": "Google OAuth Client ID",
+"Ouvrez <a href=\"https://console.cloud.google.com/\" target=\"_blank\" rel=\"noopener\">console.cloud.google.com</a> et créez un projet.": "Open <a href=\"https://console.cloud.google.com/\" target=\"_blank\" rel=\"noopener\">console.cloud.google.com</a> and create a project.",
+"<b>API et services → Bibliothèque</b> : activez <b>Google Drive API</b>.": "<b>APIs &amp; Services → Library</b>: enable <b>Google Drive API</b>.",
+"<b>Écran de consentement OAuth</b> : type <b>Externe</b>, puis ajoutez votre adresse Gmail dans <b>Utilisateurs test</b>.": "<b>OAuth consent screen</b>: type <b>External</b>, then add your Gmail address under <b>Test users</b>.",
+"<b>Identifiants → Créer → ID client OAuth</b>, type <b>Application Web</b>.": "<b>Credentials → Create → OAuth client ID</b>, type <b>Web application</b>.",
+"<b>Origines JavaScript autorisées</b> :": "<b>Authorised JavaScript origins</b>:",
+"l'adresse https:// où l'appli est hébergée": "the https:// address where the app is hosted",
+"Collez l'ID client ci-dessus, puis touchez <b>Connecter Google Drive</b>.": "Paste the client ID above, then tap <b>Connect Drive</b>.",
+"Général": "General",
+"TVA par défaut des nouveaux produits": "Default VAT for new products",
+"Étiquettes": "Labels",
+"Format des étiquettes": "Label size",
+"Largeur (mm)": "Width (mm)",
+"Hauteur (mm)": "Height (mm)",
+"Afficher le nom du produit": "Show product name",
+"Afficher le prix de vente TTC": "Show sale price incl. VAT",
+"Pivoter de 90° (si l'appli de l'imprimante l'imprime de travers)": "Rotate 90° (if the printer app prints it sideways)",
+"Aperçu": "Preview",
+"Totaux": "Totals",
+"Totaux du stock (valeur d'achat et vénale)": "Stock totals (cost and retail value)",
+"Totaux des mouvements (ventes et gains)": "Movement totals (sales and profit)",
+"Exports & sauvegarde": "Exports & backup",
+"État du stock (CSV / Excel)": "Stock report (CSV / Excel)",
+"Récapitulatif comptable du jour…": "Today’s accounting summary…",
+"Journal des mouvements (CSV / Excel)": "Movement log (CSV / Excel)",
+"Sauvegarde complète (JSON)": "Full backup (JSON)",
+"Importer (sauvegarde JSON ou liste de stock CSV)": "Import (JSON backup or CSV stock list)",
+"CSV : une ligne par produit avec des colonnes comme <i>Code, Nom, Stock, TVA, Achat HT, Vente TTC, Seuil alerte</i> (l'export « État du stock » convient). Depuis Excel : <b>Enregistrer sous → CSV</b>. Les produits existants (même code) sont mis à jour et leur stock est ajusté par un mouvement « Inventaire ».": "CSV: one row per product with columns such as <i>Code, Name, Stock, VAT, Purchase excl. VAT, Sale incl. VAT, Alert threshold</i> (the “Stock report” export works). From Excel: <b>Save as → CSV</b>. Existing products (same code) are updated and their stock is adjusted with a “Stock count” movement.",
+"Cet appareil": "This device",
+"Efface les données locales. Si Drive est connecté, elles reviendront à la prochaine synchronisation.": "Erases local data. If Drive is connected, it will come back at the next sync.",
+"Effacer les données de cet appareil": "Erase this device’s data",
+"Rechercher une mise à jour": "Check for updates",
+"Connexion intégrée pas encore disponible : collez un Client ID dans les options avancées": "Built-in connection not available yet: paste a Client ID in the advanced options",
+"Ouvrez l'appli via une adresse https:// pour connecter Drive": "Open the app from an https:// address to connect Drive",
+"Connectez d'abord Google Drive": "Connect Google Drive first",
+"Déconnecter Google Drive ?\nLes données restent sur cet appareil et dans Drive.": "Disconnect Google Drive?\nData stays on this device and in Drive.",
+"Déconnecté": "Disconnected",
+"stock-sauvegarde": "stock-backup",
+"Fichier Excel : enregistrez-le d'abord au format CSV (Enregistrer sous → CSV)": "Excel file: save it as CSV first (Save as → CSV)",
+"Fichier illisible": "Unreadable file",
+"Fichier de sauvegarde invalide": "Invalid backup file",
+"Recherche de mise à jour…": "Checking for updates…",
+"Effacer tous les produits et mouvements de cet appareil ?": "Erase all products and movements on this device?",
+"Drive n'est pas connecté : les données seront définitivement perdues. Continuer ?": "Drive is not connected: data will be permanently lost. Continue?",
+"Données locales effacées": "Local data erased",
+"Stockage local indisponible : ": "Local storage unavailable: ",
+"Pour la caméra et Google Drive, ouvrez l'appli via une adresse https://": "For the camera and Google Drive, open the app from an https:// address",
+"Nouvelle version prête : elle s'appliquera à la prochaine ouverture": "New version ready: it will apply next time you open the app",
+"Entrée enregistrée : {q}": "Stock in saved: {q}",
+"Sortie enregistrée : {q}": "Stock out saved: {q}",
+"Code": "Code",
+"Nom": "Name",
+"Stock": "Stock",
+"TVA %": "VAT %",
+"Achat HT": "Purchase excl. VAT",
+"Achat TTC": "Purchase incl. VAT",
+"Vente HT": "Sale excl. VAT",
+"Vente TTC": "Sale incl. VAT",
+"Valeur d'achat HT": "Cost value excl. VAT",
+"Valeur d'achat TTC": "Cost value incl. VAT",
+"Valeur vénale HT": "Retail value excl. VAT",
+"Valeur vénale TTC": "Retail value incl. VAT",
+"Seuil alerte": "Alert threshold",
+"Date": "Date",
+"Sens": "Direction",
+"Type": "Type",
+"Quantité": "Quantity",
+"PU HT": "Unit price excl. VAT",
+"PU TTC": "Unit price incl. VAT",
+"Total HT": "Total excl. VAT",
+"Total TTC": "Total incl. VAT",
+"Bénéfice HT (ventes)": "Profit excl. VAT (sales)",
+"Taux TVA %": "VAT rate %",
+"Articles vendus": "Items sold",
+"Retours HT": "Returns excl. VAT",
+"Net HT": "Net excl. VAT",
+"TVA collectée": "VAT collected",
+"Net TTC": "Net incl. VAT",
+"Référence": "Reference",
+"Articles": "Items",
+"TVA": "VAT",
+"Détail": "Details",
+"Valeur HT": "Value excl. VAT",
+"Référence / note": "Reference / note",
+"Achat fournisseur": "Supplier purchase",
+"Retour client": "Customer return",
+"Inventaire": "Stock count",
+"Vente": "Sale",
+"Don": "Donation",
+"Aujourd'hui": "Today",
+"7 derniers jours": "Last 7 days",
+"Ce mois-ci": "This month",
+"Mois dernier": "Last month",
+"Cette année": "This year",
+"Période personnalisée": "Custom period",
+"57 × 30 mm (rouleau continu)": "57 × 30 mm (continuous roll)",
+"57 × 40 mm (rouleau continu)": "57 × 40 mm (continuous roll)",
+"Personnalisé": "Custom",
+"Scanner": "Scan",
+"Nouveau": "New",
+"Fermer": "Close",
+"Prix unitaire HT": "Unit price excl. VAT",
+"Prix unitaire TTC": "Unit price incl. VAT",
+"Annuler": "Cancel",
+"Scanner un code-barres": "Scan a barcode",
+"Ouvrir la fiche": "Open product",
+"Sortie rapide (vente)": "Quick sale",
+"N° de commande, client, facture…": "Order no., customer, invoice…",
+"ou saisir le code…": "or type the code…"
+};
+// Les textes sont écrits en français dans le code ; tr() renvoie la traduction anglaise si la langue est EN.
+// {nom} dans un texte est remplacé par la valeur correspondante.
+const isEN = () => S.lang === 'en';
+const LOC = () => isEN() ? 'en-GB' : 'fr-FR';
+function tr(fr, v) {
+  let r = isEN() && EN[fr] !== undefined ? EN[fr] : fr;
+  if (v) r = r.replace(/\{(\w+)\}/g, (m, k) => (v[k] !== undefined ? v[k] : m));
+  return r;
+}
+function applyStatic() {
+  document.documentElement.lang = S.lang;
+  $$('[data-i18n]').forEach(el => { if (!el.dataset.fr) el.dataset.fr = el.textContent.trim(); el.textContent = tr(el.dataset.fr); });
+  $$('[data-i18n-ph]').forEach(el => { el.placeholder = tr(el.dataset.i18nPh); });
+  $$('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', tr(el.dataset.i18nAria)));
+}
+const HT = () => tr('HT'), TTC = () => tr('TTC');
+const eur = n => new Intl.NumberFormat(LOC(), { style: 'currency', currency: 'EUR' }).format(+n || 0);
+const fmtNum = n => { const v = +n || 0; return Number.isInteger(v) ? String(v) : v.toLocaleString(LOC(), { maximumFractionDigits: 3 }); };
+const fmtRate = r => isEN() ? String(+r || 0) : String(+r || 0).replace('.', ',');
+const fmtDate = iso => new Date(iso).toLocaleString(LOC(), { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
 const ttc = (ht, t) => (+ht || 0) * (1 + (+t || 0) / 100);
 const htFrom = (v, t) => (+v || 0) / (1 + (+t || 0) / 100);
 const safeJSON = s => { try { return JSON.parse(s) || {}; } catch { return {}; } };
@@ -268,10 +629,10 @@ const idb = {
 
 /* ====== État ====== */
 let DB = { products: {}, movements: {} };
-let S = Object.assign({ clientId: '', tva: 20, autoSync: true, fileId: null, driveOn: false, lastSync: null, dirty: false }, safeJSON(localStorage.getItem(SKEY)));
+let S = Object.assign({ lang: /^fr/i.test(navigator.language || 'fr') ? 'fr' : 'en', clientId: '', tva: 20, autoSync: true, fileId: null, driveOn: false, lastSync: null, dirty: false }, safeJSON(localStorage.getItem(SKEY)));
 let ver = 0;
 const saveS = () => localStorage.setItem(SKEY, JSON.stringify(S));
-async function persist() { try { await idb.set('db', DB); } catch (e) { toast('Erreur d\'enregistrement local : ' + e.message); } }
+async function persist() { try { await idb.set('db', DB); } catch (e) { toast(tr('Erreur d\'enregistrement local : ') + e.message); } }
 function touch() { ver++; S.dirty = true; saveS(); persist().then(() => { updateBadge(); scheduleSync(); }); }
 
 const activeProducts = () => Object.values(DB.products).filter(p => !p.deleted);
@@ -335,7 +696,7 @@ function labelCanvas(p, cfg = labelCfg()) {
   const pad = Math.round(1.5 * PXMM), gap = Math.round(0.6 * PXMM), iw = W - 2 * pad, ih = H - 2 * pad;
   let top = pad, bottom = H - pad;
   if (cfg.name) { const nh = Math.round(ih * 0.26); drawFitText(x, p.name || '', W / 2, top, iw, nh, 2, '700'); top += nh + gap; }
-  if (cfg.price) { const ph = Math.round(ih * 0.2); drawFitText(x, `${eur(ttc(p.sellHT, p.tva))} TTC`, W / 2, bottom - ph, iw, ph, 1, '800'); bottom -= ph + gap; }
+  if (cfg.price) { const ph = Math.round(ih * 0.2); drawFitText(x, `${eur(ttc(p.sellHT, p.tva))} ${TTC()}`, W / 2, bottom - ph, iw, ph, 1, '800'); bottom -= ph + gap; }
   const bh = bottom - top, bc = barcodeCanvas(p.code, iw, bh);
   if (bc) { const dh = Math.min(bc.height, bh), dw = Math.min(bc.width, iw); x.drawImage(bc, Math.round((W - dw) / 2), Math.round(top + (bh - dh) / 2), dw, dh); }
   else drawFitText(x, p.code || '', W / 2, top, iw, bh, 1, '700');
@@ -344,7 +705,7 @@ function labelCanvas(p, cfg = labelCfg()) {
   const rx = r.getContext('2d'); rx.translate(H, 0); rx.rotate(Math.PI / 2); rx.drawImage(c, 0, 0);
   return r;
 }
-const labelName = p => `etiquette-${(p.code || 'produit').replace(/[^\w-]/g, '')}.png`;
+const labelName = p => `${tr('etiquette')}-${(p.code || tr('produit')).replace(/[^\w-]/g, '')}.png`;
 const labelBlob = p => new Promise(res => labelCanvas(p).toBlob(res, 'image/png'));
 function showLabel(p) { const img = $('#lbl'); if (img) img.src = labelCanvas(p).toDataURL('image/png'); }
 async function shareLabel(p) {
@@ -352,15 +713,15 @@ async function shareLabel(p) {
   const file = new File([blob], name, { type: 'image/png' });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try { await navigator.share({ files: [file] }); }
-    catch (e) { if (e.name !== 'AbortError') { download(name, blob, 'image/png'); toast('Partage impossible : image téléchargée'); } }
-  } else { download(name, blob, 'image/png'); toast('Partage non disponible ici : image téléchargée'); }
+    catch (e) { if (e.name !== 'AbortError') { download(name, blob, 'image/png'); toast(tr('Partage impossible : image téléchargée')); } }
+  } else { download(name, blob, 'image/png'); toast(tr('Partage non disponible ici : image téléchargée')); }
 }
 async function downloadLabel(p) { download(labelName(p), await labelBlob(p), 'image/png'); }
 function printLabel(p) {
   const cfg = labelCfg(), w = cfg.rotate ? cfg.h : cfg.w, h = cfg.rotate ? cfg.w : cfg.h;
   const src = labelCanvas(p, cfg).toDataURL('image/png');
-  const win = window.open('', '_blank'); if (!win) { toast('Fenêtre d\'impression bloquée'); return; }
-  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Étiquette</title><style>@page{size:${w}mm ${h}mm;margin:0}html,body{margin:0}img{display:block;width:${w}mm;height:${h}mm}</style></head><body><img src="${src}"><script>document.querySelector('img').onload=function(){print()}<\/script></body></html>`);
+  const win = window.open('', '_blank'); if (!win) { toast(tr('Fenêtre d\'impression bloquée')); return; }
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${tr('Étiquette')}</title><style>@page{size:${w}mm ${h}mm;margin:0}html,body{margin:0}img{display:block;width:${w}mm;height:${h}mm}</style></head><body><img src="${src}"><script>document.querySelector('img').onload=function(){print()}<\/script></body></html>`);
   win.document.close();
 }
 
@@ -373,7 +734,7 @@ function resizeImage(file, max = 640, q = 0.72) {
     img.src = url;
   });
 }
-const photoInner = p => p.photo ? `<img src="${p.photo}" alt="">` : '<div class="ph">📦<small>Aucune photo</small></div>';
+const photoInner = p => p.photo ? `<img src="${p.photo}" alt="">` : `<div class="ph">📦<small>${tr('Aucune photo')}</small></div>`;
 
 /* ====== Routage ====== */
 const view = $('#view');
@@ -399,12 +760,12 @@ function viewList() {
   for (const p of prods) { const s = sm[p.id] || 0; units += Math.max(s, 0); val += Math.max(s, 0) * (+p.buyHT || 0); if (s <= (+p.minStock || 0)) low++; }
   view.innerHTML = `
     <div class="summary">
-      <div><b>${prods.length}</b><span>produits</span></div>
-      <div><b>${fmtNum(units)}</b><span>unités en stock</span></div>
-      <div><b>${eur(val)}</b><span>valeur HT (achat)</span></div>
+      <div><b>${prods.length}</b><span>${tr('produits')}</span></div>
+      <div><b>${fmtNum(units)}</b><span>${tr('unités en stock')}</span></div>
+      <div><b>${eur(val)}</b><span>${tr('valeur HT (achat)')}</span></div>
     </div>
-    <div class="search"><input id="q" type="search" placeholder="Rechercher un nom ou un code…" value="${esc(listState.q)}" autocomplete="off"></div>
-    <div class="chips">${[['all', 'Tous'], ['low', 'Stock bas' + (low ? ' · ' + low : '')], ['zero', 'Rupture']].map(([k, l]) => `<button class="chip${listState.filter === k ? ' on' : ''}" data-f="${k}">${l}</button>`).join('')}</div>
+    <div class="search"><input id="q" type="search" placeholder="${tr('Rechercher un nom ou un code…')}" value="${esc(listState.q)}" autocomplete="off"></div>
+    <div class="chips">${[['all', tr('Tous')], ['low', tr('Stock bas') + (low ? ' · ' + low : '')], ['zero', tr('Rupture')]].map(([k, l]) => `<button class="chip${listState.filter === k ? ' on' : ''}" data-f="${k}">${l}</button>`).join('')}</div>
     <div id="grid" class="grid"></div>`;
   $('#q').addEventListener('input', e => { listState.q = e.target.value; renderGrid(); });
   $$('.chip').forEach(b => b.onclick = () => { listState.filter = b.dataset.f; $$('.chip').forEach(x => x.classList.toggle('on', x === b)); renderGrid(); });
@@ -422,41 +783,40 @@ function renderGrid() {
   if (listState.filter === 'low') prods = prods.filter(p => (sm[p.id] || 0) <= (+p.minStock || 0));
   if (listState.filter === 'zero') prods = prods.filter(p => (sm[p.id] || 0) <= 0);
   prods.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr'));
-  if (!prods.length) { g.innerHTML = `<div class="empty">${activeProducts().length ? 'Aucun produit ne correspond.' : 'Aucun produit pour l\'instant.<br>Touchez <b>Nouveau</b> ou <b>Scanner</b> pour commencer.'}</div>`; return; }
+  if (!prods.length) { g.innerHTML = `<div class="empty">${activeProducts().length ? tr('Aucun produit ne correspond.') : tr('Aucun produit pour l\'instant.<br>Touchez <b>Nouveau</b> ou <b>Scanner</b> pour commencer.')}</div>`; return; }
   g.innerHTML = prods.map(p => { const s = sm[p.id] || 0; return `
     <article class="card" data-id="${p.id}">
       <div class="thumb">${p.photo ? `<img src="${p.photo}" alt="" loading="lazy">` : '<span>📦</span>'}</div>
       <div class="info"><h3>${esc(p.name)}</h3><div class="code">${esc(p.code)}</div>
-        <div class="price">${eur(ttc(p.sellHT, p.tva))} <small>TTC</small> · ${eur(p.sellHT)} <small>HT</small></div></div>
-      <div class="stock ${stockCls(s, p)}"><b>${fmtNum(s)}</b><small>en stock</small></div>
-      <div class="cact"><button class="btn in" data-act="in">＋ Entrée</button><button class="btn out" data-act="out">− Sortie</button></div>
+        <div class="price">${eur(ttc(p.sellHT, p.tva))} <small>${TTC()}</small> · ${eur(p.sellHT)} <small>${HT()}</small></div></div>
+      <div class="stock ${stockCls(s, p)}"><b>${fmtNum(s)}</b><small>${tr('en stock')}</small></div>
+      <div class="cact"><button class="btn in" data-act="in">＋ ${tr('Entrée')}</button><button class="btn out" data-act="out">− ${tr('Sortie')}</button></div>
     </article>`; }).join('');
 }
 
 /* ====== Fiche produit (formulaire) ====== */
 function productForm(p, isNew) {
-  const opts = TVA_RATES.map(r => `<option value="${r}"${+p.tva === r ? ' selected' : ''}>${String(r).replace('.', ',')} %</option>`).join('');
   return `
   <div class="photo-wrap">
     <div class="photo" id="photo">${photoInner(p)}</div>
     <div class="photo-btns">
-      <button type="button" class="btn" id="takePhoto">📷 Photo</button>
-      <button type="button" class="btn" id="pickPhoto">🖼️ Galerie</button>
-      <button type="button" class="btn ghost" id="rmPhoto"${p.photo ? '' : ' hidden'}>Retirer</button>
+      <button type="button" class="btn" id="takePhoto">📷 ${tr('Photo')}</button>
+      <button type="button" class="btn" id="pickPhoto">🖼️ ${tr('Galerie')}</button>
+      <button type="button" class="btn ghost" id="rmPhoto"${p.photo ? '' : ' hidden'}>${tr('Retirer')}</button>
     </div>
     <input type="file" accept="image/*" capture="environment" id="camIn" hidden>
     <input type="file" accept="image/*" id="galIn" hidden>
   </div>
   <div class="form" id="pform">
-    <label>Nom du produit<input id="f_name" value="${esc(p.name)}" placeholder="ex. Savon lavande 100 g" autocomplete="off"></label>
-    <label>Code-barres<span class="inline"><input id="f_code" value="${esc(p.code)}" inputmode="numeric" autocomplete="off"><button type="button" class="btn sq" id="genCode" title="Générer un nouveau code">↻</button><button type="button" class="btn sq" id="scanCode" title="Scanner un code existant">${ICON_SCAN}</button></span></label>
-    <label>Taux de TVA<select id="f_tva">${opts}</select></label>
-    <div class="pair"><label>Prix d'achat HT<input id="f_buyHT" inputmode="decimal" value="${fx2(p.buyHT)}"></label><label>Prix d'achat TTC<input id="f_buyTTC" inputmode="decimal" value="${fx2(ttc(p.buyHT, p.tva))}"></label></div>
-    <div class="pair"><label>Prix de vente HT<input id="f_sellHT" inputmode="decimal" value="${fx2(p.sellHT)}"></label><label>Prix de vente TTC<input id="f_sellTTC" inputmode="decimal" value="${fx2(ttc(p.sellHT, p.tva))}"></label></div>
+    <label>${tr('Nom du produit')}<input id="f_name" value="${esc(p.name)}" placeholder="${tr('ex. Savon lavande 100 g')}" autocomplete="off"></label>
+    <label>${tr('Code-barres')}<span class="inline"><input id="f_code" value="${esc(p.code)}" inputmode="numeric" autocomplete="off"><button type="button" class="btn sq" id="genCode" title="${tr('Générer un nouveau code')}">↻</button><button type="button" class="btn sq" id="scanCode" title="${tr('Scanner un code existant')}">${ICON_SCAN}</button></span></label>
+    <label>${tr('Taux de TVA')}${vatField('f_tva', p.tva)}</label>
+    <div class="pair"><label>${tr('Prix d\'achat HT')}<input id="f_buyHT" inputmode="decimal" value="${fx2(p.buyHT)}"></label><label>${tr('Prix d\'achat TTC')}<input id="f_buyTTC" inputmode="decimal" value="${fx2(ttc(p.buyHT, p.tva))}"></label></div>
+    <div class="pair"><label>${tr('Prix de vente HT')}<input id="f_sellHT" inputmode="decimal" value="${fx2(p.sellHT)}"></label><label>${tr('Prix de vente TTC')}<input id="f_sellTTC" inputmode="decimal" value="${fx2(ttc(p.sellHT, p.tva))}"></label></div>
     <div class="margin" id="margin"></div>
-    <label>Seuil d'alerte (stock bas)<input id="f_min" inputmode="decimal" value="${fmtNum(p.minStock || 0)}"></label>
-    ${isNew ? '<label>Quantité initiale en stock<input id="f_init" inputmode="decimal" value="0"></label>' : ''}
-    <label>Note<textarea id="f_note" rows="2">${esc(p.note || '')}</textarea></label>
+    <label>${tr('Seuil d\'alerte (stock bas)')}<input id="f_min" inputmode="decimal" value="${fmtNum(p.minStock || 0)}"></label>
+    ${isNew ? `<label>${tr('Quantité initiale en stock')}<input id="f_init" inputmode="decimal" value="0"></label>` : ''}
+    <label>${tr('Note')}<textarea id="f_note" rows="2">${esc(p.note || '')}</textarea></label>
   </div>`;
 }
 function bindForm(p, isNew, onSave) {
@@ -464,7 +824,7 @@ function bindForm(p, isNew, onSave) {
   const tva = () => num($('#f_tva').value);
   const showMargin = () => {
     const m = v.sellHT - v.buyHT;
-    $('#margin').textContent = v.sellHT > 0 ? `Marge : ${eur(m)} HT · taux de marque ${fmtNum(Math.round(m / v.sellHT * 1000) / 10)} %${v.buyHT > 0 ? ' · coef ×' + fmtNum(Math.round(v.sellHT / v.buyHT * 100) / 100) : ''}` : '';
+    $('#margin').textContent = v.sellHT > 0 ? tr('Marge : {m} HT · taux de marque {r} %', { m: eur(m), r: fmtNum(Math.round(m / v.sellHT * 1000) / 10) }) + (v.buyHT > 0 ? ' · ' + tr('coef') + ' ×' + fmtNum(Math.round(v.sellHT / v.buyHT * 100) / 100) : '') : '';
   };
   const sync = (k, src) => {
     const h = $('#f_' + k + 'HT'), t = $('#f_' + k + 'TTC');
@@ -478,19 +838,20 @@ function bindForm(p, isNew, onSave) {
     $('#f_' + k + 'HT').addEventListener('input', () => sync(k, 'ht'));
     $('#f_' + k + 'TTC').addEventListener('input', () => sync(k, 'ttc'));
   });
+  bindVatField('f_tva');
   $('#f_tva').addEventListener('change', () => { sync('buy', 'tva'); sync('sell', 'tva'); });
   showMargin();
   if (!isNew && onSave) $('#pform').addEventListener('change', e => { if (e.target.id !== 'f_init') onSave(); });
 
   const target = () => isNew ? p : (DB.products[p.id] || p);
   const setPhoto = data => { const t = target(); t.photo = data; $('#photo').innerHTML = photoInner(t); $('#rmPhoto').hidden = !data; if (!isNew) { t.updatedAt = nowISO(); touch(); } };
-  const onFile = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; try { setPhoto(await resizeImage(f)); } catch { toast('Image illisible'); } };
+  const onFile = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; try { setPhoto(await resizeImage(f)); } catch { toast(tr('Image illisible')); } };
   $('#takePhoto').onclick = () => $('#camIn').click();
   $('#pickPhoto').onclick = () => $('#galIn').click();
   $('#camIn').onchange = onFile; $('#galIn').onchange = onFile;
-  $('#rmPhoto').onclick = () => { if (confirm('Retirer la photo ?')) setPhoto(null); };
+  $('#rmPhoto').onclick = () => { if (confirm(tr('Retirer la photo ?'))) setPhoto(null); };
   const setCode = c => { $('#f_code').value = c; $('#f_code').dispatchEvent(new Event('change', { bubbles: true })); };
-  $('#genCode').onclick = () => { if (!isNew && !confirm('Remplacer le code-barres actuel par un nouveau code ?')) return; setCode(genCode()); };
+  $('#genCode').onclick = () => { if (!isNew && !confirm(tr('Remplacer le code-barres actuel par un nouveau code ?'))) return; setCode(genCode()); };
   $('#scanCode').onclick = () => openScanner(setCode);
 
   return () => ({
@@ -502,12 +863,12 @@ function bindForm(p, isNew, onSave) {
 /* ====== Nouveau produit ====== */
 function viewNew(code) {
   if (code) { const ex = findByCode(code); if (ex) { location.replace('#/p/' + ex.id); return; } }
-  setTitle('Nouveau produit');
+  setTitle(tr('Nouveau produit'));
   const d = { id: uid(), code: code || genCode(), name: '', photo: null, tva: +S.tva || 0, buyHT: 0, sellHT: 0, minStock: 0, note: '' };
-  view.innerHTML = `<a class="back" href="#/">← Retour</a>
-    <section class="panel"><h2>Nouveau produit</h2>${productForm(d, true)}
+  view.innerHTML = `<a class="back" href="#/">← ${tr('Retour')}</a>
+    <section class="panel"><h2>${tr('Nouveau produit')}</h2>${productForm(d, true)}
       <div class="bc-box"><svg id="bc"></svg></div>
-      <button class="btn primary block big" id="create" type="button">Créer le produit</button>
+      <button class="btn primary block big" id="create" type="button">${tr('Créer le produit')}</button>
     </section>`;
   const read = bindForm(d, true);
   renderBarcode(d.code);
@@ -515,47 +876,47 @@ function viewNew(code) {
   if (!code) setTimeout(() => $('#f_name').focus(), 50);
   $('#create').onclick = () => {
     const f = read();
-    if (!f.name) { toast('Indiquez un nom'); $('#f_name').focus(); return; }
-    if (!f.code) { toast('Code-barres requis'); return; }
-    if (codeExists(f.code)) { toast('Ce code-barres existe déjà'); return; }
+    if (!f.name) { toast(tr('Indiquez un nom')); $('#f_name').focus(); return; }
+    if (!f.code) { toast(tr('Code-barres requis')); return; }
+    if (codeExists(f.code)) { toast(tr('Ce code-barres existe déjà')); return; }
     const t = nowISO();
     const p = Object.assign(d, f, { createdAt: t, updatedAt: t, deleted: false });
     DB.products[p.id] = p;
     const q = num($('#f_init').value);
-    if (q > 0) { const id = uid(); DB.movements[id] = { id, productId: p.id, dir: 'in', type: 'inventaire', date: t, qty: q, unitHT: p.buyHT, tva: p.tva, note: 'Stock initial', createdAt: t, updatedAt: t, deleted: false }; }
-    touch(); toast('Produit créé'); location.replace('#/p/' + p.id);
+    if (q > 0) { const id = uid(); DB.movements[id] = { id, productId: p.id, dir: 'in', type: 'inventaire', date: t, qty: q, unitHT: p.buyHT, tva: p.tva, note: tr('Stock initial'), createdAt: t, updatedAt: t, deleted: false }; }
+    touch(); toast(tr('Produit créé')); location.replace('#/p/' + p.id);
   };
 }
 
 /* ====== Détail produit ====== */
 function viewProduct(id) {
   const p = DB.products[id];
-  if (!p || p.deleted) { toast('Produit introuvable'); location.replace('#/'); return; }
-  setTitle(p.name || 'Produit');
+  if (!p || p.deleted) { toast(tr('Produit introuvable')); location.replace('#/'); return; }
+  setTitle(p.name || tr('Produit'));
   const s = stockOf(id), ms = movementsOf(id);
   const sales = ms.filter(m => m.dir === 'out' && m.type === 'vente');
   const soldQ = sales.reduce((a, m) => a + (+m.qty || 0), 0), ca = sales.reduce((a, m) => a + ttc(m.unitHT, m.tva) * m.qty, 0);
   view.innerHTML = `
-    <a class="back" href="#/">← Liste</a>
+    <a class="back" href="#/">← ${tr('Liste')}</a>
     <section class="panel">
-      <div class="stockbig ${stockCls(s, p)}"><span>En stock</span><b>${fmtNum(s)}</b></div>
-      <div class="row2"><button class="btn in big" id="bIn" type="button">＋ Entrée</button><button class="btn out big" id="bOut" type="button">− Sortie</button></div>
+      <div class="stockbig ${stockCls(s, p)}"><span>${tr('En stock')}</span><b>${fmtNum(s)}</b></div>
+      <div class="row2"><button class="btn in big" id="bIn" type="button">＋ ${tr('Entrée')}</button><button class="btn out big" id="bOut" type="button">− ${tr('Sortie')}</button></div>
     </section>
-    <section class="panel"><h2>Fiche produit</h2>${productForm(p, false)}<p class="muted small">Les modifications sont enregistrées automatiquement.</p></section>
-    <section class="panel"><h2>Étiquette</h2>
-      <div class="bc-box lbl"><img id="lbl" alt="Aperçu de l'étiquette"></div>
-      <button class="btn primary block big" id="shareLbl" type="button">📤 Partager l'étiquette</button>
-      <div class="row2" style="margin-top:8px"><button class="btn" id="dlLbl" type="button">⬇️ Télécharger</button><button class="btn" id="print" type="button">🖨️ Imprimer</button></div>
-      <p class="muted small">Format ${labelCfg().w} × ${labelCfg().h} mm · modifiable dans les paramètres. « Partager » envoie l'image à l'appli de votre imprimante (Phomemo, Tiny Print…).</p>
+    <section class="panel"><h2>${tr('Fiche produit')}</h2>${productForm(p, false)}<p class="muted small">${tr('Les modifications sont enregistrées automatiquement.')}</p></section>
+    <section class="panel"><h2>${tr('Étiquette')}</h2>
+      <div class="bc-box lbl"><img id="lbl" alt="${tr('Aperçu de l\'étiquette')}"></div>
+      <button class="btn primary block big" id="shareLbl" type="button">📤 ${tr('Partager l\'étiquette')}</button>
+      <div class="row2" style="margin-top:8px"><button class="btn" id="dlLbl" type="button">⬇️ ${tr('Télécharger')}</button><button class="btn" id="print" type="button">🖨️ ${tr('Imprimer')}</button></div>
+      <p class="muted small">${tr('Format {w} × {h} mm · modifiable dans les paramètres. « Partager » envoie l\'image à l\'appli de votre imprimante (Phomemo, Tiny Print…).', { w: fmtNum(labelCfg().w), h: fmtNum(labelCfg().h) })}</p>
     </section>
-    <section class="panel"><h2>Historique</h2>${sales.length ? `<p class="muted small">Ventes : ${fmtNum(soldQ)} u. · ${eur(ca)} TTC</p>` : ''}<div id="hist"></div>
-      ${ms.length ? '<button class="btn block" id="expHist" type="button" style="margin-top:10px">📄 Exporter les mouvements…</button>' : ''}</section>
-    <button class="btn danger block" id="del" type="button">Supprimer le produit</button>`;
+    <section class="panel"><h2>${tr('Historique')}</h2>${sales.length ? `<p class="muted small">${tr('Ventes : {q} u. · {ca} TTC', { q: fmtNum(soldQ), ca: eur(ca) })}</p>` : ''}<div id="hist"></div>
+      ${ms.length ? `<button class="btn block" id="expHist" type="button" style="margin-top:10px">📄 ${tr('Exporter les mouvements…')}</button>` : ''}</section>
+    <button class="btn danger block" id="del" type="button">${tr('Supprimer le produit')}</button>`;
   const read = bindForm(p, false, () => {
     const cur = DB.products[id]; if (!cur) return;
     const f = read();
-    if (!f.name) { toast('Le nom ne peut pas être vide'); $('#f_name').value = cur.name; return; }
-    if (!f.code || codeExists(f.code, id)) { toast(f.code ? 'Code-barres déjà utilisé' : 'Code-barres requis'); $('#f_code').value = cur.code; return; }
+    if (!f.name) { toast(tr('Le nom ne peut pas être vide')); $('#f_name').value = cur.name; return; }
+    if (!f.code || codeExists(f.code, id)) { toast(f.code ? tr('Code-barres déjà utilisé') : tr('Code-barres requis')); $('#f_code').value = cur.code; return; }
     Object.assign(cur, f, { updatedAt: nowISO() }); touch(); setTitle(cur.name); showLabel(cur);
   });
   showLabel(p);
@@ -566,22 +927,22 @@ function viewProduct(id) {
   $('#print').onclick = () => printLabel(DB.products[id]);
   if ($('#expHist')) $('#expHist').onclick = () => showProductExport(id);
   $('#del').onclick = () => {
-    if (!confirm(`Supprimer « ${p.name} » et tout son historique ?`)) return;
+    if (!confirm(tr('Supprimer « {n} » et tout son historique ?', { n: p.name }))) return;
     const t = nowISO(), cur = DB.products[id];
     Object.assign(cur, { deleted: true, photo: null, updatedAt: t });
     for (const m of Object.values(DB.movements)) if (m.productId === id && !m.deleted) Object.assign(m, { deleted: true, updatedAt: t });
-    touch(); toast('Produit supprimé'); location.replace('#/');
+    touch(); toast(tr('Produit supprimé')); location.replace('#/');
   };
   const hist = $('#hist');
   hist.innerHTML = ms.length ? ms.map(m => { const u = ttc(m.unitHT, m.tva); return `
     <div class="mv ${m.dir}">
-      <div class="mvl"><b>${m.dir === 'in' ? '+' : '−'}${fmtNum(m.qty)}</b> ${esc(TYPES[m.dir][m.type] || m.type)}<small>${fmtDate(m.date)}${m.note ? ' · ' + esc(m.note) : ''}</small></div>
-      <div class="mvr">${eur(u)} /u TTC<br><b>${eur(u * m.qty)}</b> TTC<br><span class="muted">${eur(m.unitHT * m.qty)} HT</span></div>
-      <button class="x" data-del="${m.id}" aria-label="Supprimer">✕</button>
-    </div>`; }).join('') : '<p class="muted">Aucun mouvement pour l\'instant.</p>';
+      <div class="mvl"><b>${m.dir === 'in' ? '+' : '−'}${fmtNum(m.qty)}</b> ${esc(typeLabel(m.dir, m.type))}<small>${fmtDate(m.date)}${m.note ? ' · ' + esc(m.note) : ''}</small></div>
+      <div class="mvr">${eur(u)} /u ${TTC()}<br><b>${eur(u * m.qty)}</b> ${TTC()}<br><span class="muted">${eur(m.unitHT * m.qty)} ${HT()}</span></div>
+      <button class="x" data-del="${m.id}" aria-label="${tr('Supprimer')}">✕</button>
+    </div>`; }).join('') : `<p class="muted">${tr('Aucun mouvement pour l\'instant.')}</p>`;
   hist.onclick = e => {
     const b = e.target.closest('[data-del]'); if (!b) return;
-    const m = DB.movements[b.dataset.del]; if (!m || !confirm('Supprimer ce mouvement ? Le stock sera recalculé.')) return;
+    const m = DB.movements[b.dataset.del]; if (!m || !confirm(tr('Supprimer ce mouvement ? Le stock sera recalculé.'))) return;
     Object.assign(m, { deleted: true, updatedAt: nowISO() }); touch(); rerender();
   };
 }
@@ -596,16 +957,16 @@ function openMove(pid, dir, opts = {}) {
   mv.u = defaultPrice(p, dir, mv.type);
   const dlg = $('#mvDlg');
   dlg.className = dir;
-  $('#mvTitle').textContent = dir === 'in' ? 'Entrée en stock' : 'Sortie de stock';
+  $('#mvTitle').textContent = dir === 'in' ? tr('Entrée en stock') : tr('Sortie de stock');
   $('#mvOk').className = 'btn ' + dir;
-  $('#mvProd').textContent = `${p.name} · stock actuel : ${fmtNum(stockOf(pid))}`;
-  $('#mvTypes').innerHTML = Object.entries(types).map(([k, l]) => `<button type="button" data-t="${k}" class="${k === mv.type ? 'on' : ''}">${l}</button>`).join('');
+  $('#mvProd').textContent = `${p.name} · ${tr('stock actuel :')} ${fmtNum(stockOf(pid))}`;
+  $('#mvTypes').innerHTML = Object.entries(types).map(([k, l]) => `<button type="button" data-t="${k}" class="${k === mv.type ? 'on' : ''}">${tr(l)}</button>`).join('');
   $('#m_date').value = localDT();
   $('#m_qty').value = '1';
   $('#m_note').value = opts.note || '';
-  $('#m_tvaLbl').textContent = `TVA ${String(mv.tva).replace('.', ',')} % · prix par défaut repris de la fiche, modifiable`;
+  $('#m_tvaLbl').textContent = tr('TVA {r} % · prix par défaut repris de la fiche, modifiable', { r: fmtRate(mv.tva) });
   mvRecalc();
-  $('#mvOk').textContent = mv.quick ? 'Valider et scanner le suivant' : 'Valider';
+  $('#mvOk').textContent = mv.quick ? tr('Valider et scanner le suivant') : tr('Valider');
   dlg.showModal();
 }
 function mvRecalc(field) {
@@ -637,14 +998,14 @@ function bindMoveDialog() {
   $('#mvDlg').addEventListener('close', () => { if (mv && mv.quick) { mv.quick = false; setTimeout(() => openScanner(onGlobalScan, true), 150); } });
   $('#mvOk').onclick = () => {
     const q = num($('#m_qty').value);
-    if (!(q > 0)) { toast('Quantité invalide'); return; }
+    if (!(q > 0)) { toast(tr('Quantité invalide')); return; }
     const { p, dir } = mv;
-    if (dir === 'out') { const s = stockOf(p.id); if (q > s && !confirm(`Stock insuffisant (${fmtNum(s)} en stock). Enregistrer quand même ?`)) return; }
+    if (dir === 'out') { const s = stockOf(p.id); if (q > s && !confirm(tr('Stock insuffisant ({s} en stock). Enregistrer quand même ?', { s: fmtNum(s) }))) return; }
     const dv = $('#m_date').value, t = nowISO(), id = uid();
     DB.movements[id] = { id, productId: p.id, dir, type: mv.type, date: dv ? new Date(dv).toISOString() : t, qty: q, unitHT: mv.u, tva: mv.tva, note: $('#m_note').value.trim(), createdAt: t, updatedAt: t, deleted: false };
     if (mv.quick) { S.lastRef = $('#m_note').value.trim(); saveS(); }
     $('#mvDlg').close(); touch();
-    toast(`${dir === 'in' ? 'Entrée' : 'Sortie'} enregistrée : ${dir === 'in' ? '+' : '−'}${fmtNum(q)}`);
+    toast(tr(dir === 'in' ? 'Entrée enregistrée : {q}' : 'Sortie enregistrée : {q}', { q: (dir === 'in' ? '+' : '−') + fmtNum(q) }));
     rerender();
   };
 }
@@ -659,13 +1020,13 @@ function todaySales() {
 function renderScanMode() {
   const quick = S.scanMode === 'quick';
   $$('#scanMode button').forEach(b => b.classList.toggle('on', b.dataset.m === (quick ? 'quick' : 'open')));
-  $('#scanInfo').textContent = quick ? `Scan → fenêtre de vente prête → Valider → scan suivant · ventes du jour : ${fmtNum(todaySales())} article(s)` : 'Scan → ouverture de la fiche produit';
+  $('#scanInfo').textContent = quick ? tr('Scan → fenêtre de vente prête → Valider → scan suivant · ventes du jour : {n} article(s)', { n: fmtNum(todaySales()) }) : tr('Scan → ouverture de la fiche produit');
 }
 async function openScanner(cb, withMode = false) {
   scanCb = cb; $('#scanOv').hidden = false; $('#scanInput').value = '';
   $('#scanModeBox').hidden = !withMode; if (withMode) renderScanMode();
-  if (typeof Html5Qrcode === 'undefined') { toast('Lecteur indisponible (connexion internet ?) — saisissez le code'); return; }
-  if (!window.isSecureContext) { toast('La caméra exige une adresse https:// — saisissez le code', 4000); return; }
+  if (typeof Html5Qrcode === 'undefined') { toast(tr('Lecteur indisponible (connexion internet ?) — saisissez le code')); return; }
+  if (!window.isSecureContext) { toast(tr('La caméra exige une adresse https:// — saisissez le code'), 4000); return; }
   const F = Html5QrcodeSupportedFormats;
   try {
     scanner = new Html5Qrcode('reader', { formatsToSupport: [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128, F.CODE_39, F.ITF, F.QR_CODE], experimentalFeatures: { useBarCodeDetectorIfSupported: true }, verbose: false });
@@ -673,7 +1034,7 @@ async function openScanner(cb, withMode = false) {
       { fps: 12, qrbox: (w, h) => ({ width: Math.max(120, Math.floor(Math.min(w * 0.85, 340))), height: Math.max(80, Math.floor(Math.min(h * 0.35, 170))) }) },
       txt => { if (scanCb) scanDone(String(txt).trim()); }, () => {});
     if ($('#scanOv').hidden) closeScanner();
-  } catch (e) { toast('Caméra inaccessible : ' + (e && e.message ? e.message : e), 4000); }
+  } catch (e) { toast(tr('Caméra inaccessible : ') + (e && e.message ? e.message : e), 4000); }
 }
 function scanDone(code) { const cb = scanCb; scanCb = null; if (navigator.vibrate) navigator.vibrate(60); closeScanner().then(() => cb && cb(code)); }
 async function closeScanner() {
@@ -686,7 +1047,7 @@ function onGlobalScan(code) {
   const p = findByCode(code);
   if (p && S.scanMode === 'quick') { openMove(p.id, 'out', { type: 'vente', quick: true, note: S.lastRef || '' }); return; }
   if (p) { location.hash = '#/p/' + p.id; toast(p.name); }
-  else if (confirm(`Code ${code} inconnu.\nCréer un nouveau produit avec ce code ?`)) location.hash = '#/new/' + encodeURIComponent(code);
+  else if (confirm(tr('Code {c} inconnu.\nCréer un nouveau produit avec ce code ?', { c: code }))) location.hash = '#/new/' + encodeURIComponent(code);
 }
 
 /* ====== Google Drive ====== */
@@ -695,7 +1056,7 @@ const tokenValid = () => !!accessToken && Date.now() < tokenExp - 60000;
 function waitGIS() {
   return new Promise((res, rej) => {
     if (window.google && google.accounts && google.accounts.oauth2) return res();
-    let n = 0; const t = setInterval(() => { if (window.google && google.accounts && google.accounts.oauth2) { clearInterval(t); res(); } else if (++n > 50) { clearInterval(t); rej(new Error('Service Google inaccessible (connexion internet ?)')); } }, 100);
+    let n = 0; const t = setInterval(() => { if (window.google && google.accounts && google.accounts.oauth2) { clearInterval(t); res(); } else if (++n > 50) { clearInterval(t); rej(new Error(tr('Service Google inaccessible (connexion internet ?)'))); } }, 100);
   });
 }
 let tokenClient = null, tokenClientId = null, tokenPending = null, tokenResolve = null, tokenReject = null, lastRenewFail = 0;
@@ -703,8 +1064,8 @@ const authErr = msg => Object.assign(new Error(msg), { auth: true });
 async function getToken(interactive) {
   if (tokenValid()) return accessToken;
   if (tokenPending) return tokenPending;
-  if (!interactive) throw authErr('Reconnexion Google nécessaire — touchez la pastille de synchro');
-  if (!effectiveClientId()) throw new Error('Synchronisation Google Drive pas encore disponible : renseignez un Client ID (Paramètres → options avancées)');
+  if (!interactive) throw authErr(tr('Reconnexion Google nécessaire — touchez la pastille de synchro'));
+  if (!effectiveClientId()) throw new Error(tr('Synchronisation Google Drive pas encore disponible : renseignez un Client ID (Paramètres → options avancées)'));
   await waitGIS();
   if (!tokenClient || tokenClientId !== effectiveClientId()) {
     tokenClientId = effectiveClientId();
@@ -716,7 +1077,7 @@ async function getToken(interactive) {
         localStorage.setItem(TKEY, JSON.stringify({ t: accessToken, e: tokenExp }));
         tokenResolve && tokenResolve(accessToken);
       },
-      error_callback: e => tokenReject && tokenReject(new Error(e.type === 'popup_closed' ? 'Fenêtre Google fermée' : e.type === 'popup_failed_to_open' ? 'Fenêtre Google bloquée par le navigateur' : (e.message || e.type || 'Erreur Google')))
+      error_callback: e => tokenReject && tokenReject(new Error(e.type === 'popup_closed' ? tr('Fenêtre Google fermée') : e.type === 'popup_failed_to_open' ? tr('Fenêtre Google bloquée par le navigateur') : (e.message || e.type || tr('Erreur Google'))))
     });
   }
   tokenPending = new Promise((res, rej) => { tokenResolve = res; tokenReject = rej; })
@@ -727,7 +1088,7 @@ async function getToken(interactive) {
   tokenClient.requestAccessToken(opts);
   // Google ne répond pas (mauvaise connexion) : on abandonne au bout de 20 s, nouvel essai plus tard
   const p = tokenPending;
-  setTimeout(() => { if (tokenPending === p && tokenReject) tokenReject(new Error('Google ne répond pas (connexion lente ?) — nouvel essai plus tard')); }, 20000);
+  setTimeout(() => { if (tokenPending === p && tokenReject) tokenReject(new Error(tr('Google ne répond pas (connexion lente ?) — nouvel essai plus tard'))); }, 20000);
   return p;
 }
 // Mémorise le compte Google utilisé (pour renouveler l'accès sans choisir le compte)
@@ -757,7 +1118,7 @@ function onUserGesture(e) {
 }
 async function api(url, opts = {}) {
   const r = await fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + accessToken } });
-  if (r.status === 401) { accessToken = null; tokenExp = 0; localStorage.removeItem(TKEY); throw authErr('Session Google expirée — touchez la pastille de synchro'); }
+  if (r.status === 401) { accessToken = null; tokenExp = 0; localStorage.removeItem(TKEY); throw authErr(tr('Session Google expirée — touchez la pastille de synchro')); }
   return r;
 }
 // Fusionne les produits en double (même code-barres, identifiants différents) :
@@ -805,7 +1166,7 @@ async function syncNow(interactive) {
     if (!fileId) {
       const q = encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
       const r = await api(`${base}?q=${q}&spaces=drive&orderBy=modifiedTime%20desc&fields=files(id)`);
-      if (!r.ok) throw new Error('Drive : erreur ' + r.status);
+      if (!r.ok) throw new Error(tr('Drive : erreur ') + r.status);
       const j = await r.json(); fileId = (j.files && j.files[0] && j.files[0].id) || null;
     }
     let changed = 0;
@@ -817,12 +1178,12 @@ async function syncNow(interactive) {
     const body = JSON.stringify({ app: 'gestion-stock', version: 1, savedAt: nowISO(), products: DB.products, movements: DB.movements });
     if (fileId) {
       const r = await api(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
-      if (!r.ok) throw new Error('Envoi vers Drive : erreur ' + r.status);
+      if (!r.ok) throw new Error(tr('Envoi vers Drive : erreur ') + r.status);
     } else {
       const bd = 'stockapp' + Date.now();
       const mp = `--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: FILE_NAME, mimeType: 'application/json' })}\r\n--${bd}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${bd}--`;
       const r = await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + bd }, body: mp });
-      if (!r.ok) throw new Error('Création du fichier Drive : erreur ' + r.status);
+      if (!r.ok) throw new Error(tr('Création du fichier Drive : erreur ') + r.status);
       fileId = (await r.json()).id;
     }
     if (!S.email) rememberAccount();
@@ -830,24 +1191,24 @@ async function syncNow(interactive) {
     if (changed) await persist();
     syncState = 'idle';
     if (changed && !isEditing()) rerender();
-    if (interactive) toast(changed ? `Synchronisé · ${changed} mise(s) à jour reçue(s)` : 'Synchronisé');
+    if (interactive) toast(changed ? tr('Synchronisé · {n} mise(s) à jour reçue(s)', { n: changed }) : tr('Synchronisé'));
   } catch (e) { if (e.auth && !interactive) { syncState = 'idle'; syncErr = ''; } else { syncState = 'error'; syncErr = e.message; } if (interactive) toast(e.message, 4000); }
   finally { syncing = false; updateBadge(); if (ver !== v0) scheduleSync(); }
 }
 function updateBadge() {
   const b = $('#syncBadge'); let cls, txt;
-  if (!S.driveOn) { cls = 'off'; txt = 'Local'; }
-  else if (syncState === 'busy') { cls = 'busy'; txt = 'Synchro…'; }
-  else if (syncState === 'error') { cls = 'err'; txt = 'Erreur'; }
-  else if (S.dirty) { cls = 'dirty'; txt = 'À synchroniser'; }
-  else { cls = 'ok'; txt = 'Synchronisé'; }
+  if (!S.driveOn) { cls = 'off'; txt = tr('Local'); }
+  else if (syncState === 'busy') { cls = 'busy'; txt = tr('Synchro…'); }
+  else if (syncState === 'error') { cls = 'err'; txt = tr('Erreur'); }
+  else if (S.dirty) { cls = 'dirty'; txt = tr('À synchroniser'); }
+  else { cls = 'ok'; txt = tr('Synchronisé'); }
   b.className = 'badge ' + cls; b.querySelector('span').textContent = txt;
-  b.title = syncErr || (S.lastSync ? 'Dernière synchro : ' + fmtDate(S.lastSync) : '');
+  b.title = syncErr || (S.lastSync ? tr('Dernière synchro : ') + fmtDate(S.lastSync) : '');
   const st = $('#s_stat'); if (st) st.innerHTML = driveStatusHTML();
 }
 function driveStatusHTML() {
-  if (!S.driveOn) return '<span class="dot"></span> Non connecté — les données restent uniquement sur cet appareil.';
-  return `<span class="dot ${syncState === 'error' ? 'err' : S.dirty ? 'dirty' : 'ok'}"></span> Connecté à Google Drive${tokenValid() ? '' : ' (accès renouvelé automatiquement à votre prochain geste)'}<br><small class="muted">${S.lastSync ? 'Dernière synchro : ' + fmtDate(S.lastSync) : 'Jamais synchronisé'}${syncErr ? ' · ' + esc(syncErr) : ''}</small>`;
+  if (!S.driveOn) return '<span class="dot"></span> ' + tr('Non connecté — les données restent uniquement sur cet appareil.');
+  return `<span class="dot ${syncState === 'error' ? 'err' : S.dirty ? 'dirty' : 'ok'}"></span> ${tr('Connecté à Google Drive')}${tokenValid() ? '' : ' ' + tr('(accès renouvelé automatiquement à votre prochain geste)')}<br><small class="muted">${S.lastSync ? tr('Dernière synchro : ') + fmtDate(S.lastSync) : tr('Jamais synchronisé')}${syncErr ? ' · ' + esc(syncErr) : ''}</small>`;
 }
 
 /* ====== Export / import ====== */
@@ -855,9 +1216,10 @@ function download(name, content, type) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type })); a.download = name;
   document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
 }
-const csvCell = v => { const s = String(v ?? ''); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-const dec = n => fx2(n).replace('.', ',');
-const toCSV = rows => '\ufeff' + rows.map(r => r.map(csvCell).join(';')).join('\r\n');
+const csvCell = v => { const s = String(v ?? ''); return /[;,"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+const dec = n => isEN() ? fx2(n) : fx2(n).replace('.', ',');
+// Séparateur « ; » et virgule décimale en français (Excel FR), « , » et point en anglais (Excel EN)
+const toCSV = rows => '\ufeff' + rows.map(r => r.map(csvCell).join(isEN() ? ',' : ';')).join('\r\n');
 const today = () => new Date().toISOString().slice(0, 10);
 /* ====== Totaux ====== */
 function stockTotals() {
@@ -885,7 +1247,7 @@ function stockAt(pid, date) {
 }
 function moveTotals(list) {
   const T = { n: list.length, in: { q: 0, ht: 0, ttc: 0 }, out: { q: 0, ht: 0, ttc: 0 }, types: {}, venteQ: 0, venteHT: 0, venteTTC: 0, coutHT: 0, gainHT: 0 };
-  for (const dir of ['in', 'out']) for (const k in TYPES[dir]) T.types[dir + '.' + k] = { dir, label: TYPES[dir][k], q: 0, ht: 0, ttc: 0 };
+  for (const dir of ['in', 'out']) for (const k in TYPES[dir]) T.types[dir + '.' + k] = { dir, label: typeLabel(dir, k), q: 0, ht: 0, ttc: 0 };
   for (const m of list) {
     const ht = m.unitHT * m.qty, tt = ttc(m.unitHT, m.tva) * m.qty, g = T[m.dir], ty = T.types[m.dir + '.' + m.type];
     g.q += +m.qty; g.ht += ht; g.ttc += tt;
@@ -898,56 +1260,56 @@ function moveTotals(list) {
 
 function exportStockCSV() {
   const sm = stockMap();
-  const rows = [['Code', 'Nom', 'Stock', 'TVA %', 'Achat HT', 'Achat TTC', 'Vente HT', 'Vente TTC', 'Valeur d\'achat HT', 'Valeur d\'achat TTC', 'Valeur vénale HT', 'Valeur vénale TTC', 'Seuil alerte']];
+  const rows = [['Code', 'Nom', 'Stock', 'TVA %', 'Achat HT', 'Achat TTC', 'Vente HT', 'Vente TTC', 'Valeur d\'achat HT', 'Valeur d\'achat TTC', 'Valeur vénale HT', 'Valeur vénale TTC', 'Seuil alerte'].map(h => tr(h))];
   activeProducts().sort((a, b) => a.name.localeCompare(b.name, 'fr')).forEach(p => {
     const s = sm[p.id] || 0, sp = Math.max(s, 0);
     rows.push([p.code, p.name, fmtNum(s), dec(p.tva), dec(p.buyHT), dec(ttc(p.buyHT, p.tva)), dec(p.sellHT), dec(ttc(p.sellHT, p.tva)),
       dec(sp * p.buyHT), dec(sp * ttc(p.buyHT, p.tva)), dec(sp * p.sellHT), dec(sp * ttc(p.sellHT, p.tva)), fmtNum(p.minStock || 0)]);
   });
-  const t = stockTotals();
+  const tt = stockTotals();
   rows.push([]);
-  rows.push(['TOTAL', `${t.refs} références`, fmtNum(t.units), '', '', '', '', '', dec(t.buyHT), dec(t.buyTTC), dec(t.sellHT), dec(t.sellTTC), '']);
-  rows.push(['Marge potentielle', '', '', '', '', '', '', '', '', '', dec(t.sellHT - t.buyHT), dec(t.sellTTC - t.buyTTC), '']);
+  rows.push([tr('TOTAL'), `${tt.refs} ${tr('références')}`, fmtNum(tt.units), '', '', '', '', '', dec(tt.buyHT), dec(tt.buyTTC), dec(tt.sellHT), dec(tt.sellTTC), '']);
+  rows.push([tr('Marge potentielle'), '', '', '', '', '', '', '', '', '', dec(tt.sellHT - tt.buyHT), dec(tt.sellTTC - tt.buyTTC), '']);
   download(`stock-${today()}.csv`, toCSV(rows), 'text/csv;charset=utf-8');
 }
 function exportMovesCSV(from, to, pid) {
   const list = movesInRange(from, to, pid), prod = pid ? DB.products[pid] : null;
   const rows = [];
   if (prod) {
-    rows.push(['Produit', prod.name, 'Code', prod.code]);
-    rows.push(['Période', periodLabel(from, to)]);
-    rows.push(['Stock en début de période', fmtNum(from ? stockAt(pid, from) : 0)]);
-    rows.push(['Stock en fin de période', fmtNum(stockAt(pid, to))]);
+    rows.push([tr('Produit'), prod.name, 'Code', prod.code]);
+    rows.push([tr('Période'), periodLabel(from, to)]);
+    rows.push([tr('Stock en début de période'), fmtNum(from ? stockAt(pid, from) : 0)]);
+    rows.push([tr('Stock en fin de période'), fmtNum(stockAt(pid, to))]);
     rows.push([]);
   }
-  rows.push(['Date', 'Code', 'Produit', 'Sens', 'Type', 'Quantité', 'PU HT', 'PU TTC', 'Total HT', 'Total TTC', 'TVA %', 'Bénéfice HT (ventes)', 'Note']);
+  rows.push(['Date', 'Code', 'Produit', 'Sens', 'Type', 'Quantité', 'PU HT', 'PU TTC', 'Total HT', 'Total TTC', 'TVA %', 'Bénéfice HT (ventes)', 'Note'].map(h => tr(h)));
   list.forEach(m => {
     const p = DB.products[m.productId] || {}, isSale = m.dir === 'out' && m.type === 'vente';
-    rows.push([fmtDate(m.date), p.code || '', p.name || '', m.dir === 'in' ? 'Entrée' : 'Sortie', TYPES[m.dir][m.type] || m.type, fmtNum(m.qty), dec(m.unitHT), dec(ttc(m.unitHT, m.tva)), dec(m.unitHT * m.qty), dec(ttc(m.unitHT, m.tva) * m.qty), dec(m.tva), isSale ? dec(gainHT(m)) : '', m.note || '']);
+    rows.push([fmtDate(m.date), p.code || '', p.name || '', m.dir === 'in' ? tr('Entrée') : tr('Sortie'), typeLabel(m.dir, m.type), fmtNum(m.qty), dec(m.unitHT), dec(ttc(m.unitHT, m.tva)), dec(m.unitHT * m.qty), dec(ttc(m.unitHT, m.tva) * m.qty), dec(m.tva), isSale ? dec(gainHT(m)) : '', m.note || '']);
   });
   const T = moveTotals(list);
   const line = (label, q, ht, tt, gain = '') => [label, '', '', '', '', q === '' ? '' : fmtNum(q), '', '', ht === '' ? '' : dec(ht), tt === '' ? '' : dec(tt), '', gain === '' ? '' : dec(gain), ''];
   rows.push([]);
-  for (const ty of Object.values(T.types)) if (ty.q) rows.push(line(`Total ${ty.dir === 'in' ? 'entrées' : 'sorties'} – ${ty.label}`, ty.q, ty.ht, ty.ttc));
-  rows.push(line('TOTAL ENTRÉES', T.in.q, T.in.ht, T.in.ttc));
-  rows.push(line('TOTAL SORTIES', T.out.q, T.out.ht, T.out.ttc));
-  rows.push(line('Prix total de vente', T.venteQ, T.venteHT, T.venteTTC));
-  rows.push(line('Coût d\'achat des articles vendus', T.venteQ, T.coutHT, ''));
-  rows.push(line('BÉNÉFICE TOTAL (HT)', '', '', '', T.gainHT));
+  for (const ty of Object.values(T.types)) if (ty.q) rows.push(line(`${tr(ty.dir === 'in' ? 'Total entrées' : 'Total sorties')} – ${ty.label}`, ty.q, ty.ht, ty.ttc));
+  rows.push(line(tr('TOTAL ENTRÉES'), T.in.q, T.in.ht, T.in.ttc));
+  rows.push(line(tr('TOTAL SORTIES'), T.out.q, T.out.ht, T.out.ttc));
+  rows.push(line(tr('Prix total de vente'), T.venteQ, T.venteHT, T.venteTTC));
+  rows.push(line(tr('Coût d\'achat des articles vendus'), T.venteQ, T.coutHT, ''));
+  rows.push(line(tr('BÉNÉFICE TOTAL (HT)'), '', '', '', T.gainHT));
   const ymd = d => localDT(d).slice(0, 10);
-  const suffix = from || to ? `-${from ? ymd(from) : 'debut'}_${to ? ymd(new Date(to - 1)) : today()}` : `-${today()}`;
-  const tag = prod ? '-' + (prod.code || 'produit').replace(/[^\w-]/g, '') : '';
-  download(`mouvements${tag}${suffix}.csv`, toCSV(rows), 'text/csv;charset=utf-8');
+  const suffix = from || to ? `-${from ? ymd(from) : tr('debut')}_${to ? ymd(new Date(to - 1)) : today()}` : `-${today()}`;
+  const tag = prod ? '-' + (prod.code || tr('produit')).replace(/[^\w-]/g, '') : '';
+  download(`${tr('mouvements')}${tag}${suffix}.csv`, toCSV(rows), 'text/csv;charset=utf-8');
 }
 /* ====== Récapitulatif comptable (pour saisie dans Pennylane ou autre logiciel) ====== */
 function exportComptaCSV(from, to) {
   const list = movesInRange(from, to);
   const day = m => localDT(new Date(m.date)).slice(0, 10);
-  const dfr = d => d.split('-').reverse().join('/');
+  const dfr = d => d.split('-').reverse().join('/');  // jj/mm/aaaa (FR et EN-GB)
   const isSale = m => m.dir === 'out' && m.type === 'vente', isRet = m => m.dir === 'in' && m.type === 'retour', isDon = m => m.dir === 'out' && m.type === 'don';
   const pname = m => (DB.products[m.productId] || {}).name || '?';
-  const rows = [['RÉCAPITULATIF COMPTABLE'], ['Période', periodLabel(from, to)], ['Édité le', fmtDate(nowISO())],
-    ['Montants calculés à partir des sorties « Vente » et des entrées « Retour client » ; à rapprocher des encaissements et factures réels.'], []];
+  const rows = [[tr('RÉCAPITULATIF COMPTABLE')], [tr('Période'), periodLabel(from, to)], [tr('Édité le'), fmtDate(nowISO())],
+    [tr('Montants calculés à partir des sorties « Vente » et des entrées « Retour client » ; à rapprocher des encaissements et factures réels.')], []];
   // A. Par jour et par taux
   const byDay = {};
   for (const m of list) {
@@ -956,86 +1318,86 @@ function exportComptaCSV(from, to) {
     const ht = m.unitHT * m.qty;
     if (isSale(m)) { o.q += +m.qty; o.v += ht; } else o.ret += ht;
   }
-  rows.push(['VENTES PAR JOUR ET PAR TAUX DE TVA']);
-  rows.push(['Date', 'Taux TVA %', 'Articles vendus', 'Ventes HT', 'Retours HT', 'Net HT', 'TVA collectée', 'Net TTC']);
+  rows.push([tr('VENTES PAR JOUR ET PAR TAUX DE TVA')]);
+  rows.push(['Date', 'Taux TVA %', 'Articles vendus', 'Ventes HT', 'Retours HT', 'Net HT', 'TVA collectée', 'Net TTC'].map(h => tr(h)));
   const byRate = {};
   for (const o of Object.values(byDay).sort((a, b) => a.d.localeCompare(b.d) || a.r - b.r)) {
     const net = o.v - o.ret, tva = net * o.r / 100;
     rows.push([dfr(o.d), dec(o.r), fmtNum(o.q), dec(o.v), o.ret ? '-' + dec(o.ret) : dec(0), dec(net), dec(tva), dec(net + tva)]);
     const R = byRate[o.r] = byRate[o.r] || { q: 0, v: 0, ret: 0 }; R.q += o.q; R.v += o.v; R.ret += o.ret;
   }
-  if (!Object.keys(byDay).length) rows.push(['Aucune vente sur la période']);
+  if (!Object.keys(byDay).length) rows.push([tr('Aucune vente sur la période')]);
   rows.push([]);
   // B. Par référence / commande
   const byRef = {};
   for (const m of list) {
     if (!isSale(m) && !isRet(m)) continue;
-    const ref = m.note || '(sans référence)', o = byRef[ref] = byRef[ref] || { d: day(m), q: 0, ht: 0, tva: 0, items: {} };
+    const ref = m.note || tr('(sans référence)'), o = byRef[ref] = byRef[ref] || { d: day(m), q: 0, ht: 0, tva: 0, items: {} };
     const sg = isSale(m) ? 1 : -1, ht = sg * m.unitHT * m.qty;
     o.q += sg * m.qty; o.ht += ht; o.tva += ht * (+m.tva || 0) / 100;
     o.items[pname(m)] = (o.items[pname(m)] || 0) + sg * m.qty;
   }
-  rows.push(['VENTES PAR RÉFÉRENCE (N° DE COMMANDE)']);
-  rows.push(['Date', 'Référence', 'Articles', 'Total HT', 'TVA', 'Total TTC', 'Détail']);
+  rows.push([tr('VENTES PAR RÉFÉRENCE (N° DE COMMANDE)')]);
+  rows.push(['Date', 'Référence', 'Articles', 'Total HT', 'TVA', 'Total TTC', 'Détail'].map(h => tr(h)));
   for (const [ref, o] of Object.entries(byRef).sort((a, b) => a[1].d.localeCompare(b[1].d) || a[0].localeCompare(b[0], 'fr')))
     rows.push([dfr(o.d), ref, fmtNum(o.q), dec(o.ht), dec(o.tva), dec(o.ht + o.tva), Object.entries(o.items).map(([n, q]) => `${fmtNum(q)} × ${n}`).join(' ; ')]);
   if (!Object.keys(byRef).length) rows.push(['—']);
   rows.push([]);
   // C. Dons
   const dons = list.filter(isDon);
-  rows.push(['DONS (valorisés au prix d\'achat HT)']);
-  rows.push(['Date', 'Produit', 'Quantité', 'Valeur HT', 'Référence / note']);
+  rows.push([tr('DONS (valorisés au prix d\'achat HT)')]);
+  rows.push(['Date', 'Produit', 'Quantité', 'Valeur HT', 'Référence / note'].map(h => tr(h)));
   let donsHT = 0;
   for (const m of dons) { const v = m.qty * (+(DB.products[m.productId] || {}).buyHT || 0); donsHT += v; rows.push([dfr(day(m)), pname(m), fmtNum(m.qty), dec(v), m.note || '']); }
   if (!dons.length) rows.push(['—']);
   rows.push([]);
   // D. Totaux par taux
-  rows.push(['TOTAUX DE LA PÉRIODE PAR TAUX DE TVA']);
-  rows.push(['Taux TVA %', 'Articles vendus', 'Ventes HT', 'Retours HT', 'Net HT', 'TVA collectée', 'Net TTC']);
+  rows.push([tr('TOTAUX DE LA PÉRIODE PAR TAUX DE TVA')]);
+  rows.push(['Taux TVA %', 'Articles vendus', 'Ventes HT', 'Retours HT', 'Net HT', 'TVA collectée', 'Net TTC'].map(h => tr(h)));
   const tot = { q: 0, v: 0, ret: 0, tva: 0 };
   for (const [r, R] of Object.entries(byRate).sort((a, b) => a[0] - b[0])) {
     const net = R.v - R.ret, tva = net * r / 100;
     rows.push([dec(r), fmtNum(R.q), dec(R.v), R.ret ? '-' + dec(R.ret) : dec(0), dec(net), dec(tva), dec(net + tva)]);
     tot.q += R.q; tot.v += R.v; tot.ret += R.ret; tot.tva += tva;
   }
-  rows.push(['TOTAL', fmtNum(tot.q), dec(tot.v), tot.ret ? '-' + dec(tot.ret) : dec(0), dec(tot.v - tot.ret), dec(tot.tva), dec(tot.v - tot.ret + tot.tva)]);
+  rows.push([tr('TOTAL'), fmtNum(tot.q), dec(tot.v), tot.ret ? '-' + dec(tot.ret) : dec(0), dec(tot.v - tot.ret), dec(tot.tva), dec(tot.v - tot.ret + tot.tva)]);
   const T = moveTotals(list);
   rows.push([]);
-  rows.push(['Coût d\'achat des articles vendus (HT)', dec(T.coutHT)]);
-  rows.push(['Bénéfice sur ventes (HT)', dec(T.gainHT)]);
-  if (dons.length) rows.push(['Valeur des dons (HT, prix d\'achat)', dec(donsHT)]);
+  rows.push([tr('Coût d\'achat des articles vendus (HT)'), dec(T.coutHT)]);
+  rows.push([tr('Bénéfice sur ventes (HT)'), dec(T.gainHT)]);
+  if (dons.length) rows.push([tr('Valeur des dons (HT, prix d\'achat)'), dec(donsHT)]);
   const ymd = d => localDT(d).slice(0, 10);
-  const suffix = from || to ? `${from ? ymd(from) : 'debut'}_${to ? ymd(new Date(to - 1)) : today()}` : today();
-  download(`recap-comptable-${suffix}.csv`, toCSV(rows), 'text/csv;charset=utf-8');
+  const suffix = from || to ? `${from ? ymd(from) : tr('debut')}_${to ? ymd(new Date(to - 1)) : today()}` : today();
+  download(`${tr('recap-comptable')}-${suffix}.csv`, toCSV(rows), 'text/csv;charset=utf-8');
 }
 function periodLabel(from, to) {
-  const d = x => x.toLocaleDateString('fr-FR');
-  if (!from && !to) return 'Depuis le début';
-  if (from && d(from) === d(to ? new Date(to - 1) : new Date())) return 'Le ' + d(from);
-  return `${from ? 'Du ' + d(from) : 'Depuis le début'}${to ? ' au ' + d(new Date(to - 1)) : ' à aujourd\'hui'}`;
+  const d = x => x.toLocaleDateString(LOC());
+  if (!from && !to) return tr('Depuis le début');
+  if (from && d(from) === d(to ? new Date(to - 1) : new Date())) return tr('Le {d}', { d: d(from) });
+  return `${from ? tr('Du {d}', { d: d(from) }) : tr('Depuis le début')}${to ? tr(' au {d}', { d: d(new Date(to - 1)) }) : tr(' à aujourd\'hui')}`;
 }
 
 /* ====== Export des mouvements d'un produit ====== */
 let prodPeriod = 'all';
 function showProductExport(pid) {
   const p = DB.products[pid]; if (!p) return;
-  $('#infoTitle').textContent = 'Exporter les mouvements';
+  $('#infoTitle').textContent = tr('Exporter les mouvements');
   $('#infoBody').innerHTML = `
     <p class="muted small" style="margin:0">${esc(p.name)} · ${esc(p.code)}</p>
-    <label>Période<select id="tp_sel">${PERIOD_OPTS.map(([k, l]) => `<option value="${k}"${k === prodPeriod ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
-    <div class="pair" id="tp_custom"${prodPeriod === 'custom' ? '' : ' hidden'}><label>Du<input type="date" id="tp_from"></label><label>Au<input type="date" id="tp_to"></label></div>
+    <label>${tr('Période')}<select id="tp_sel">${PERIOD_OPTS.map(([k, l]) => `<option value="${k}"${k === prodPeriod ? ' selected' : ''}>${tr(l)}</option>`).join('')}</select></label>
+    <div class="pair" id="tp_custom"${prodPeriod === 'custom' ? '' : ' hidden'}><label>${tr('Du')}<input type="date" id="tp_from"></label><label>${tr('Au')}<input type="date" id="tp_to"></label></div>
     <div id="tp_res"></div>
-    <button class="btn primary block big" id="infoCsv" type="button">📄 Exporter (CSV / Excel)</button>`;
+    <button class="btn primary block big" id="infoCsv" type="button">📄 ${tr('Exporter (CSV / Excel)')}</button>`;
   const render = () => {
     const [from, to] = periodRange(prodPeriod), list = movesInRange(from, to, pid), T = moveTotals(list);
     $('#tp_res').innerHTML = `
       <table class="tt"><tbody>
-        ${trow('Mouvements sur la période', `<b>${list.length}</b>`)}
-        ${trow('Stock en début de période', fmtNum(from ? stockAt(pid, from) : 0))}
-        ${trow('＋ Entrées', fmtNum(T.in.q))}
-        ${trow('− Sorties', fmtNum(T.out.q))}
-        ${trow('Stock en fin de période', `<b>${fmtNum(stockAt(pid, to))}</b>`)}
-        ${T.venteQ ? trow('Ventes', `${fmtNum(T.venteQ)} u. · ${eur(T.venteTTC)} TTC`) + trow('Bénéfice (HT)', `<b>${eur(T.gainHT)}</b>`) : ''}
+        ${trow(tr('Mouvements sur la période'), `<b>${list.length}</b>`)}
+        ${trow(tr('Stock en début de période'), fmtNum(from ? stockAt(pid, from) : 0))}
+        ${trow('＋ ' + tr('Entrées'), fmtNum(T.in.q))}
+        ${trow('− ' + tr('Sorties'), fmtNum(T.out.q))}
+        ${trow(tr('Stock en fin de période'), `<b>${fmtNum(stockAt(pid, to))}</b>`)}
+        ${T.venteQ ? trow(tr('Ventes'), `${fmtNum(T.venteQ)} ${tr('u.')} · ${eur(T.venteTTC)} ${TTC()}`) + trow(tr('Bénéfice (HT)'), `<b>${eur(T.gainHT)}</b>`) : ''}
       </tbody></table>`;
     $('#infoCsv').disabled = !list.length;
   };
@@ -1049,17 +1411,17 @@ function showProductExport(pid) {
 /* ====== Fenêtre des totaux ====== */
 const trow = (l, ...v) => `<tr><th>${l}</th>${v.map(x => `<td>${x}</td>`).join('')}</tr>`;
 function showStockTotals() {
-  const t = stockTotals();
-  $('#infoTitle').textContent = 'Totaux du stock';
+  const tt = stockTotals();
+  $('#infoTitle').textContent = tr('Totaux du stock');
   $('#infoBody').innerHTML = `
-    <div class="kpis"><div><small>Références</small><b>${t.refs}</b></div><div><small>Unités en stock</small><b>${fmtNum(t.units)}</b></div></div>
-    <table class="tt"><thead><tr><th></th><th>HT</th><th>TTC</th></tr></thead><tbody>
-      ${trow('Valeur d\'achat', eur(t.buyHT), eur(t.buyTTC))}
-      ${trow('Valeur vénale', eur(t.sellHT), eur(t.sellTTC))}
-      ${trow('<b>Marge potentielle</b>', `<b>${eur(t.sellHT - t.buyHT)}</b>`, `<b>${eur(t.sellTTC - t.buyTTC)}</b>`)}
+    <div class="kpis"><div><small>${tr('Références')}</small><b>${tt.refs}</b></div><div><small>${tr('Unités en stock')}</small><b>${fmtNum(tt.units)}</b></div></div>
+    <table class="tt"><thead><tr><th></th><th>${HT()}</th><th>${TTC()}</th></tr></thead><tbody>
+      ${trow(tr('Valeur d\'achat'), eur(tt.buyHT), eur(tt.buyTTC))}
+      ${trow(tr('Valeur vénale'), eur(tt.sellHT), eur(tt.sellTTC))}
+      ${trow(`<b>${tr('Marge potentielle')}</b>`, `<b>${eur(tt.sellHT - tt.buyHT)}</b>`, `<b>${eur(tt.sellTTC - tt.buyTTC)}</b>`)}
     </tbody></table>
-    <p class="muted small">Valeur d'achat = stock × prix d'achat ; valeur vénale = stock × prix de vente. Les stocks négatifs comptent pour zéro.</p>
-    <button class="btn block" id="infoCsv" type="button">📄 Exporter le stock (CSV)</button>`;
+    <p class="muted small">${tr('Valeur d\'achat = stock × prix d\'achat ; valeur vénale = stock × prix de vente. Les stocks négatifs comptent pour zéro.')}</p>
+    <button class="btn block" id="infoCsv" type="button">📄 ${tr('Exporter le stock (CSV)')}</button>`;
   $('#infoCsv').onclick = exportStockCSV;
   $('#infoDlg').showModal();
 }
@@ -1082,36 +1444,36 @@ function periodRange(k) {
 let movePeriod = 'all';
 const PERIOD_OPTS = [['all', 'Depuis le début'], ['today', 'Aujourd\'hui'], ['7d', '7 derniers jours'], ['month', 'Ce mois-ci'], ['lastmonth', 'Mois dernier'], ['year', 'Cette année'], ['custom', 'Période personnalisée']];
 function showMoveTotals() {
-  $('#infoTitle').textContent = 'Totaux des mouvements';
+  $('#infoTitle').textContent = tr('Totaux des mouvements');
   const opts = PERIOD_OPTS;
   $('#infoBody').innerHTML = `
-    <label>Période<select id="tp_sel">${opts.map(([k, l]) => `<option value="${k}"${k === movePeriod ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
-    <div class="pair" id="tp_custom"${movePeriod === 'custom' ? '' : ' hidden'}><label>Du<input type="date" id="tp_from"></label><label>Au<input type="date" id="tp_to"></label></div>
+    <label>${tr('Période')}<select id="tp_sel">${opts.map(([k, l]) => `<option value="${k}"${k === movePeriod ? ' selected' : ''}>${tr(l)}</option>`).join('')}</select></label>
+    <div class="pair" id="tp_custom"${movePeriod === 'custom' ? '' : ' hidden'}><label>${tr('Du')}<input type="date" id="tp_from"></label><label>${tr('Au')}<input type="date" id="tp_to"></label></div>
     <div id="tp_res"></div>
-    <button class="btn primary block" id="infoCompta" type="button">📒 Récapitulatif comptable (CSV)</button>
-    <p class="muted small" style="margin:-4px 0 0">Ventes par jour et par taux de TVA, par n° de commande, dons et totaux : prêt pour la saisie dans votre logiciel comptable.</p>
-    <button class="btn block" id="infoCsv" type="button">📄 Détail des mouvements (CSV)</button>`;
+    <button class="btn primary block" id="infoCompta" type="button">📒 ${tr('Récapitulatif comptable (CSV)')}</button>
+    <p class="muted small" style="margin:-4px 0 0">${tr('Ventes par jour et par taux de TVA, par n° de commande, dons et totaux : prêt pour la saisie dans votre logiciel comptable.')}</p>
+    <button class="btn block" id="infoCsv" type="button">📄 ${tr('Détail des mouvements (CSV)')}</button>`;
   const render = () => {
     const [from, to] = periodRange(movePeriod), T = moveTotals(movesInRange(from, to));
-    const rate = T.venteHT > 0 ? ` · ${fmtNum(Math.round(T.gainHT / T.venteHT * 1000) / 10)} % des ventes` : '';
+    const rate = T.venteHT > 0 ? ' · ' + tr('{p} % des ventes', { p: fmtNum(Math.round(T.gainHT / T.venteHT * 1000) / 10) }) : '';
     const typeRows = Object.values(T.types).filter(t => t.q).map(t => trow(`${t.dir === 'in' ? '＋' : '−'} ${t.label}`, fmtNum(t.q), eur(t.ht), eur(t.ttc))).join('');
-    $('#tp_res').innerHTML = !T.n ? '<p class="muted">Aucun mouvement sur cette période.</p>' : `
+    $('#tp_res').innerHTML = !T.n ? `<p class="muted">${tr('Aucun mouvement sur cette période.')}</p>` : `
       <div class="kpis">
-        <div><small>Prix total de vente</small><b>${eur(T.venteTTC)}</b><small>${eur(T.venteHT)} HT · ${fmtNum(T.venteQ)} u.</small></div>
-        <div class="gain"><small>Bénéfice</small><b>${eur(T.gainHT)}</b><small>HT${rate}</small></div>
+        <div><small>${tr('Prix total de vente')}</small><b>${eur(T.venteTTC)}</b><small>${eur(T.venteHT)} ${HT()} · ${fmtNum(T.venteQ)} ${tr('u.')}</small></div>
+        <div class="gain"><small>${tr('Bénéfice')}</small><b>${eur(T.gainHT)}</b><small>${HT()}${rate}</small></div>
       </div>
-      <table class="tt"><thead><tr><th></th><th>Qté</th><th>HT</th><th>TTC</th></tr></thead><tbody>
+      <table class="tt"><thead><tr><th></th><th>${tr('Qté')}</th><th>${HT()}</th><th>${TTC()}</th></tr></thead><tbody>
         ${typeRows}
-        ${trow('<b>Total entrées</b>', `<b>${fmtNum(T.in.q)}</b>`, `<b>${eur(T.in.ht)}</b>`, `<b>${eur(T.in.ttc)}</b>`)}
-        ${trow('<b>Total sorties</b>', `<b>${fmtNum(T.out.q)}</b>`, `<b>${eur(T.out.ht)}</b>`, `<b>${eur(T.out.ttc)}</b>`)}
+        ${trow(`<b>${tr('Total entrées')}</b>`, `<b>${fmtNum(T.in.q)}</b>`, `<b>${eur(T.in.ht)}</b>`, `<b>${eur(T.in.ttc)}</b>`)}
+        ${trow(`<b>${tr('Total sorties')}</b>`, `<b>${fmtNum(T.out.q)}</b>`, `<b>${eur(T.out.ht)}</b>`, `<b>${eur(T.out.ttc)}</b>`)}
       </tbody></table>
       <table class="tt"><tbody>
-        ${trow('Ventes HT', eur(T.venteHT))}
-        ${trow('Coût d\'achat des articles vendus', '− ' + eur(T.coutHT))}
-        ${trow('<b>Bénéfice (HT)</b>', `<b>${eur(T.gainHT)}</b>`)}
-        ${trow('TVA collectée sur ventes', eur(T.venteTTC - T.venteHT))}
+        ${trow(tr('Ventes HT'), eur(T.venteHT))}
+        ${trow(tr('Coût d\'achat des articles vendus'), '− ' + eur(T.coutHT))}
+        ${trow(`<b>${tr('Bénéfice (HT)')}</b>`, `<b>${eur(T.gainHT)}</b>`)}
+        ${trow(tr('TVA collectée sur ventes'), eur(T.venteTTC - T.venteHT))}
       </tbody></table>
-      <p class="muted small">Le coût d'achat utilise le prix d'achat actuel de chaque fiche produit.</p>`;
+      <p class="muted small">${tr('Le coût d\'achat utilise le prix d\'achat actuel de chaque fiche produit.')}</p>`;
   };
   $('#tp_sel').onchange = e => { movePeriod = e.target.value; $('#tp_custom').hidden = movePeriod !== 'custom'; render(); };
   $('#tp_from').onchange = render; $('#tp_to').onchange = render;
@@ -1125,15 +1487,15 @@ function showMoveTotals() {
 function askImportMode(j) {
   const np = Object.values(j.products || {}).filter(p => !p.deleted).length;
   const nph = Object.values(j.products || {}).filter(p => !p.deleted && p.photo).length;
-  $('#infoTitle').textContent = 'Importer la sauvegarde';
+  $('#infoTitle').textContent = tr('Importer la sauvegarde');
   $('#infoBody').innerHTML = `
-    <p style="margin:0">Cette sauvegarde contient <b>${np}</b> produit(s), dont <b>${nph}</b> avec photo${j.savedAt ? `, enregistrée le ${fmtDate(j.savedAt)}` : ''}.</p>
-    <button class="btn primary block big" id="impReplace" type="button">Remplacer les données de cet appareil</button>
-    <p class="muted small" style="margin:-4px 0 0">Recommandé pour restaurer ou transférer un stock : l'appareil devient identique à la sauvegarde (y compris dans Google Drive s'il est connecté).</p>
-    <button class="btn block" id="impMerge" type="button">Fusionner avec les données actuelles</button>
-    <p class="muted small" style="margin:-4px 0 0">Ajoute les produits et mouvements de la sauvegarde ; les doublons de code-barres sont regroupés.</p>`;
+    <p style="margin:0">${tr('Cette sauvegarde contient <b>{np}</b> produit(s), dont <b>{nph}</b> avec photo', { np, nph })}${j.savedAt ? tr(', enregistrée le {d}', { d: fmtDate(j.savedAt) }) : ''}.</p>
+    <button class="btn primary block big" id="impReplace" type="button">${tr('Remplacer les données de cet appareil')}</button>
+    <p class="muted small" style="margin:-4px 0 0">${tr('Recommandé pour restaurer ou transférer un stock : l\'appareil devient identique à la sauvegarde (y compris dans Google Drive s\'il est connecté).')}</p>
+    <button class="btn block" id="impMerge" type="button">${tr('Fusionner avec les données actuelles')}</button>
+    <p class="muted small" style="margin:-4px 0 0">${tr('Ajoute les produits et mouvements de la sauvegarde ; les doublons de code-barres sont regroupés.')}</p>`;
   $('#impReplace').onclick = () => {
-    if (!confirm('Remplacer toutes les données de cet appareil par cette sauvegarde ?')) return;
+    if (!confirm(tr('Remplacer toutes les données de cet appareil par cette sauvegarde ?'))) return;
     $('#infoDlg').close(); importBackup(j, true);
   };
   $('#impMerge').onclick = () => { $('#infoDlg').close(); importBackup(j, false); };
@@ -1148,14 +1510,14 @@ function importBackup(j, replace) {
     for (const m of Object.values(DB.movements)) if (!rm[m.id] && !m.deleted) Object.assign(m, { deleted: true, updatedAt: t });
     for (const p of Object.values(rp)) DB.products[p.id] = { ...p, updatedAt: t };
     for (const m of Object.values(rm)) DB.movements[m.id] = { ...m, updatedAt: t };
-    touch(); toast(`Sauvegarde restaurée : ${Object.values(rp).filter(p => !p.deleted).length} produit(s)`);
+    touch(); toast(tr('Sauvegarde restaurée : {n} produit(s)', { n: Object.values(rp).filter(p => !p.deleted).length }));
   } else {
     let a, b, ph = 0;
     [DB.products, a] = mergeColl(DB.products, rp); [DB.movements, b] = mergeColl(DB.movements, rm);
     // Photo manquante sur l'appareil mais présente dans la sauvegarde : on la reprend toujours
     for (const r of Object.values(rp)) { const l = DB.products[r.id]; if (r.photo && l && !l.photo && !l.deleted) { l.photo = r.photo; l.updatedAt = t; ph++; } }
     const d = dedupeByCode();
-    touch(); toast(`Import : ${a + b} élément(s) fusionné(s)${ph ? ` · ${ph} photo(s) récupérée(s)` : ''}${d ? ` · ${d} doublon(s) regroupé(s)` : ''}`);
+    touch(); toast(tr('Import : {n} élément(s) fusionné(s)', { n: a + b }) + (ph ? ' · ' + tr('{n} photo(s) récupérée(s)', { n: ph }) : '') + (d ? ' · ' + tr('{n} doublon(s) regroupé(s)', { n: d }) : ''));
   }
   location.hash = '#/';
 }
@@ -1179,29 +1541,29 @@ function parseCSV(text) {
 }
 const normH = h => h.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 const CSV_COLS = {
-  code: ['code', 'code barre', 'code barres', 'code a barres', 'codebarre', 'codebarres', 'ean', 'ean13', 'ean 13', 'barcode', 'gtin', 'reference', 'ref'],
-  name: ['nom', 'produit', 'nom du produit', 'designation', 'libelle', 'article', 'name', 'description'],
-  qty: ['stock', 'quantite', 'qte', 'qty', 'quantite en stock', 'stock actuel', 'en stock'],
-  tva: ['tva', 'taux tva', 'taux de tva', 'tva %'],
-  buyHT: ['achat ht', 'prix achat ht', 'prix d achat ht', 'pa ht', 'prix achat', 'prix d achat', 'cout ht', 'cout'],
-  buyTTC: ['achat ttc', 'prix achat ttc', 'prix d achat ttc', 'pa ttc'],
-  sellHT: ['vente ht', 'prix vente ht', 'prix de vente ht', 'pv ht'],
-  sellTTC: ['vente ttc', 'prix vente ttc', 'prix de vente ttc', 'pv ttc', 'prix ttc', 'prix vente', 'prix de vente', 'prix'],
-  min: ['seuil', 'seuil alerte', 'seuil d alerte', 'stock min', 'stock minimum', 'alerte']
+  code: ['code', 'code barre', 'code barres', 'code a barres', 'codebarre', 'codebarres', 'ean', 'ean13', 'ean 13', 'barcode', 'gtin', 'reference', 'ref', 'sku', 'upc'],
+  name: ['nom', 'produit', 'nom du produit', 'designation', 'libelle', 'article', 'name', 'description', 'product', 'product name', 'item', 'item name', 'title'],
+  qty: ['stock', 'quantite', 'qte', 'qty', 'quantite en stock', 'stock actuel', 'en stock', 'quantity', 'on hand', 'in stock', 'stock qty', 'stock quantity'],
+  tva: ['tva', 'taux tva', 'taux de tva', 'tva %', 'vat', 'vat rate', 'tax', 'tax rate'],
+  buyHT: ['achat ht', 'prix achat ht', 'prix d achat ht', 'pa ht', 'prix achat', 'prix d achat', 'cout ht', 'cout', 'purchase excl vat', 'purchase price excl vat', 'purchase price', 'cost', 'cost price', 'buy price', 'unit cost'],
+  buyTTC: ['achat ttc', 'prix achat ttc', 'prix d achat ttc', 'pa ttc', 'purchase incl vat', 'purchase price incl vat'],
+  sellHT: ['vente ht', 'prix vente ht', 'prix de vente ht', 'pv ht', 'sale excl vat', 'sale price excl vat', 'price excl vat', 'net price'],
+  sellTTC: ['vente ttc', 'prix vente ttc', 'prix de vente ttc', 'pv ttc', 'prix ttc', 'prix vente', 'prix de vente', 'prix', 'sale incl vat', 'sale price incl vat', 'price incl vat', 'sale price', 'selling price', 'retail price', 'price'],
+  min: ['seuil', 'seuil alerte', 'seuil d alerte', 'stock min', 'stock minimum', 'alerte', 'alert threshold', 'min stock', 'minimum stock', 'reorder level', 'reorder point']
 };
 function importStockCSV(text) {
   const rows = parseCSV(text);
-  if (rows.length < 2) { toast('Fichier CSV vide ou illisible'); return; }
+  if (rows.length < 2) { toast(tr('Fichier CSV vide ou illisible')); return; }
   const head = rows[0].map(normH), col = {};
   for (const [k, names] of Object.entries(CSV_COLS)) { const i = head.findIndex(h => names.includes(h)); if (i >= 0) col[k] = i; }
-  if (col.name === undefined && col.code === undefined) { toast('Colonnes introuvables : il faut au moins « Nom » ou « Code » en première ligne', 5000); return; }
+  if (col.name === undefined && col.code === undefined) { toast(tr('Colonnes introuvables : il faut au moins « Nom » ou « Code » en première ligne'), 5000); return; }
   const cell = (r, k) => col[k] === undefined ? '' : (r[col[k]] || '');
   const has = (r, k) => cell(r, k) !== '';
   const sm = stockMap(), seen = new Set(), plan = [];
   let sciCodes = 0;
   for (const r of rows.slice(1)) {
     const name = cell(r, 'name'); let code = cell(r, 'code').replace(/\s/g, '');
-    if (/^(total|marge)/i.test(r[0] || '') || (!name && !code)) continue;
+    if (/^(total|marge|potential margin)/i.test(r[0] || '') || (!name && !code)) continue;
     if (/^\d+(,\d+)?e\+\d+$/i.test(code)) { sciCodes++; continue; }
     if (code && seen.has(code)) continue; if (code) seen.add(code);
     const ex = code ? findByCode(code) : (activeProducts().find(p => p.name.toLowerCase() === name.toLowerCase()));
@@ -1211,12 +1573,12 @@ function importStockCSV(text) {
     plan.push({ ex, code, name, tva, buyHT: priceHT('buyHT', 'buyTTC'), sellHT: priceHT('sellHT', 'sellTTC'),
       min: has(r, 'min') ? num(cell(r, 'min')) : null, qty: has(r, 'qty') ? num(cell(r, 'qty')) : null });
   }
-  if (!plan.length) { toast(sciCodes ? 'Codes-barres abîmés par Excel (format 2,00E+12) : mettez la colonne Code au format Texte' : 'Aucun produit trouvé dans le fichier', 5000); return; }
+  if (!plan.length) { toast(sciCodes ? tr('Codes-barres abîmés par Excel (format 2,00E+12) : mettez la colonne Code au format Texte') : tr('Aucun produit trouvé dans le fichier'), 5000); return; }
   const nNew = plan.filter(x => !x.ex).length, nUpd = plan.length - nNew;
   const nAdj = plan.filter(x => x.qty !== null && x.qty !== (x.ex ? (sm[x.ex.id] || 0) : 0)).length;
-  let msg = `Import CSV :\n• ${nNew} nouveau(x) produit(s)\n• ${nUpd} produit(s) existant(s) mis à jour\n• ${nAdj} ajustement(s) de stock (mouvement « Inventaire »)`;
-  if (sciCodes) msg += `\n\n⚠️ ${sciCodes} ligne(s) ignorée(s) : code-barres abîmé par Excel (2,00E+12).`;
-  if (!confirm(msg + '\n\nContinuer ?')) return;
+  let msg = tr('Import CSV :\n• {a} nouveau(x) produit(s)\n• {b} produit(s) existant(s) mis à jour\n• {c} ajustement(s) de stock (mouvement « Inventaire »)', { a: nNew, b: nUpd, c: nAdj });
+  if (sciCodes) msg += '\n\n⚠️ ' + tr('{n} ligne(s) ignorée(s) : code-barres abîmé par Excel (2,00E+12).', { n: sciCodes });
+  if (!confirm(msg + '\n\n' + tr('Continuer ?'))) return;
   const t = nowISO();
   for (const x of plan) {
     let p = x.ex;
@@ -1234,13 +1596,13 @@ function importStockCSV(text) {
       if (diff) { const id = uid(); DB.movements[id] = { id, productId: p.id, dir: diff > 0 ? 'in' : 'out', type: 'inventaire', date: t, qty: Math.abs(diff), unitHT: +p.buyHT || 0, tva: +p.tva || 0, note: 'Import CSV', createdAt: t, updatedAt: t, deleted: false }; }
     }
   }
-  touch(); toast(`Import terminé : ${plan.length} produit(s)`); location.hash = '#/';
+  touch(); toast(tr('Import terminé : {n} produit(s)', { n: plan.length })); location.hash = '#/';
 }
 
 /* ====== Paramètres ====== */
 function bindLabelSettings() {
   const cfg = labelCfg();
-  const sample = activeProducts()[0] || { name: 'Exemple de produit', code: '200123456789' + ean13Check('200123456789'), sellHT: 10, tva: 20 };
+  const sample = activeProducts()[0] || { name: tr('Exemple de produit'), code: '200123456789' + ean13Check('200123456789'), sellHT: 10, tva: 20 };
   const setPreset = () => { const k = `${fmtNum(cfg.w)}x${fmtNum(cfg.h)}`; $('#l_preset').value = LABEL_PRESETS.some(([p]) => p === k) ? k : 'custom'; };
   const preview = () => { $('#l_prev').src = labelCanvas(sample, cfg).toDataURL('image/png'); };
   const save = () => { S.label = { ...cfg }; saveS(); preview(); };
@@ -1254,7 +1616,7 @@ function bindLabelSettings() {
   };
   const dim = (el, k) => el.onchange = () => {
     const v = num(el.value);
-    if (v < 15 || v > 150) { toast('Dimension entre 15 et 150 mm'); el.value = fmtNum(cfg[k]); return; }
+    if (v < 15 || v > 150) { toast(tr('Dimension entre 15 et 150 mm')); el.value = fmtNum(cfg[k]); return; }
     cfg[k] = v; setPreset(); save();
   };
   dim($('#l_w'), 'w'); dim($('#l_h'), 'h');
@@ -1263,97 +1625,104 @@ function bindLabelSettings() {
   $('#l_rot').onchange = e => { cfg.rotate = e.target.checked; save(); };
 }
 function viewSettings() {
-  setTitle('Paramètres');
+  setTitle(tr('Paramètres'));
   const origin = location.origin && location.origin !== 'null' ? location.origin : null;
   view.innerHTML = `
-  <a class="back" href="#/">← Liste</a>
+  <a class="back" href="#/">← ${tr('Liste')}</a>
+  <section class="panel"><h2>${tr('Langue / Language')}</h2>
+    <div class="seg" id="s_lang"><button type="button" data-l="fr" class="${isEN() ? '' : 'on'}">🇫🇷 Français</button><button type="button" data-l="en" class="${isEN() ? 'on' : ''}">🇬🇧 English</button></div>
+  </section>
   <section class="panel"><h2>Google Drive</h2>
-    <p class="muted small" style="margin-top:0">Vos données sont enregistrées sur cet appareil et sauvegardées dans <b>votre</b> Google Drive (fichier <code>${FILE_NAME}</code>). Connectez le même compte Google sur plusieurs téléphones ou ordinateurs pour partager le même stock.</p>
+    <p class="muted small" style="margin-top:0">${tr('Vos données sont enregistrées sur cet appareil et sauvegardées dans <b>votre</b> Google Drive (fichier <code>{f}</code>). Connectez le même compte Google sur plusieurs téléphones ou ordinateurs pour partager le même stock.', { f: FILE_NAME })}</p>
     <div class="status" id="s_stat">${driveStatusHTML()}</div>
-    <div class="row2"><button class="btn primary" id="s_conn" type="button">${S.driveOn ? 'Reconnecter' : 'Connecter Drive'}</button><button class="btn" id="s_sync" type="button">Synchroniser</button></div>
-    <label class="check" style="margin-top:12px"><input type="checkbox" id="s_auto"${S.autoSync ? ' checked' : ''}> Synchroniser automatiquement après chaque modification</label>
-    ${S.driveOn ? '<button class="btn ghost block" id="s_disc" type="button" style="margin-top:8px">Déconnecter Google Drive</button>' : ''}
-    <p class="muted small">L'appli n'accède qu'au fichier qu'elle a créé dans votre Drive (autorisation « drive.file ») : ni vos autres fichiers, ni l'éditeur de l'appli ne peuvent lire vos données. <a href="confidentialite.html" target="_blank" rel="noopener">Politique de confidentialité</a></p>
-    <details${!BUILTIN_CLIENT_ID && !S.clientId ? ' open' : ''}><summary>Options avancées : utiliser votre propre Client ID</summary>
-      <p class="small">${BUILTIN_CLIENT_ID ? 'Facultatif. Laissez vide pour utiliser la connexion intégrée.' : 'La connexion intégrée n\'est pas encore configurée : vous pouvez utiliser votre propre Client ID Google.'}</p>
-      <label>Client ID OAuth Google<input id="s_cid" value="${esc(S.clientId)}" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false"></label>
+    <div class="row2"><button class="btn primary" id="s_conn" type="button">${S.driveOn ? tr('Reconnecter') : tr('Connecter Drive')}</button><button class="btn" id="s_sync" type="button">${tr('Synchroniser')}</button></div>
+    <label class="check" style="margin-top:12px"><input type="checkbox" id="s_auto"${S.autoSync ? ' checked' : ''}> ${tr('Synchroniser automatiquement après chaque modification')}</label>
+    ${S.driveOn ? `<button class="btn ghost block" id="s_disc" type="button" style="margin-top:8px">${tr('Déconnecter Google Drive')}</button>` : ''}
+    <p class="muted small">${tr('L\'appli n\'accède qu\'au fichier qu\'elle a créé dans votre Drive (autorisation « drive.file ») : ni vos autres fichiers, ni l\'éditeur de l\'appli ne peuvent lire vos données.')} <a href="confidentialite.html" target="_blank" rel="noopener">${tr('Politique de confidentialité')}</a></p>
+    <details${!BUILTIN_CLIENT_ID && !S.clientId ? ' open' : ''}><summary>${tr('Options avancées : utiliser votre propre Client ID')}</summary>
+      <p class="small">${BUILTIN_CLIENT_ID ? tr('Facultatif. Laissez vide pour utiliser la connexion intégrée.') : tr('La connexion intégrée n\'est pas encore configurée : vous pouvez utiliser votre propre Client ID Google.')}</p>
+      <label>${tr('Client ID OAuth Google')}<input id="s_cid" value="${esc(S.clientId)}" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false"></label>
       <ol>
-        <li>Ouvrez <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a> et créez un projet.</li>
-        <li><b>API et services → Bibliothèque</b> : activez <b>Google Drive API</b>.</li>
-        <li><b>Écran de consentement OAuth</b> : type <b>Externe</b>, puis ajoutez votre adresse Gmail dans <b>Utilisateurs test</b>.</li>
-        <li><b>Identifiants → Créer → ID client OAuth</b>, type <b>Application Web</b>.</li>
-        <li><b>Origines JavaScript autorisées</b> : ${origin ? `<code>${esc(origin)}</code>` : '<b>l\'adresse https:// où l\'appli est hébergée</b>'}</li>
-        <li>Collez l'ID client ci-dessus, puis touchez <b>Connecter Google Drive</b>.</li>
+        <li>${tr('Ouvrez <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a> et créez un projet.')}</li>
+        <li>${tr('<b>API et services → Bibliothèque</b> : activez <b>Google Drive API</b>.')}</li>
+        <li>${tr('<b>Écran de consentement OAuth</b> : type <b>Externe</b>, puis ajoutez votre adresse Gmail dans <b>Utilisateurs test</b>.')}</li>
+        <li>${tr('<b>Identifiants → Créer → ID client OAuth</b>, type <b>Application Web</b>.')}</li>
+        <li>${tr('<b>Origines JavaScript autorisées</b> :')} ${origin ? `<code>${esc(origin)}</code>` : `<b>${tr('l\'adresse https:// où l\'appli est hébergée')}</b>`}</li>
+        <li>${tr('Collez l\'ID client ci-dessus, puis touchez <b>Connecter Google Drive</b>.')}</li>
       </ol>
     </details>
   </section>
-  <section class="panel"><h2>Général</h2>
-    <label>TVA par défaut des nouveaux produits<select id="s_tva">${TVA_RATES.map(r => `<option value="${r}"${+S.tva === r ? ' selected' : ''}>${String(r).replace('.', ',')} %</option>`).join('')}</select></label>
+  <section class="panel"><h2>${tr('Général')}</h2>
+    <label>${tr('TVA par défaut des nouveaux produits')}${vatField('s_tva', S.tva)}</label>
   </section>
-  <section class="panel"><h2>Étiquettes</h2><div class="form">
-    <label>Format des étiquettes<select id="l_preset">${LABEL_PRESETS.map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></label>
-    <div class="pair"><label>Largeur (mm)<input id="l_w" inputmode="decimal"></label><label>Hauteur (mm)<input id="l_h" inputmode="decimal"></label></div>
-    <label class="check"><input type="checkbox" id="l_name"> Afficher le nom du produit</label>
-    <label class="check"><input type="checkbox" id="l_price"> Afficher le prix de vente TTC</label>
-    <label class="check"><input type="checkbox" id="l_rot"> Pivoter de 90° (si l'appli de l'imprimante l'imprime de travers)</label>
-    <div class="bc-box lbl"><img id="l_prev" alt="Aperçu"></div>
+  <section class="panel"><h2>${tr('Étiquettes')}</h2><div class="form">
+    <label>${tr('Format des étiquettes')}<select id="l_preset">${LABEL_PRESETS.map(([k, l]) => `<option value="${k}">${tr(l)}</option>`).join('')}</select></label>
+    <div class="pair"><label>${tr('Largeur (mm)')}<input id="l_w" inputmode="decimal"></label><label>${tr('Hauteur (mm)')}<input id="l_h" inputmode="decimal"></label></div>
+    <label class="check"><input type="checkbox" id="l_name"> ${tr('Afficher le nom du produit')}</label>
+    <label class="check"><input type="checkbox" id="l_price"> ${tr('Afficher le prix de vente TTC')}</label>
+    <label class="check"><input type="checkbox" id="l_rot"> ${tr('Pivoter de 90° (si l\'appli de l\'imprimante l\'imprime de travers)')}</label>
+    <div class="bc-box lbl"><img id="l_prev" alt="${tr('Aperçu')}"></div>
   </div></section>
-  <section class="panel"><h2>Totaux</h2><div class="stack">
-    <button class="btn primary block" id="s_tot1" type="button">📦 Totaux du stock (valeur d'achat et vénale)</button>
-    <button class="btn primary block" id="s_tot2" type="button">💶 Totaux des mouvements (ventes et gains)</button>
+  <section class="panel"><h2>${tr('Totaux')}</h2><div class="stack">
+    <button class="btn primary block" id="s_tot1" type="button">📦 ${tr('Totaux du stock (valeur d\'achat et vénale)')}</button>
+    <button class="btn primary block" id="s_tot2" type="button">💶 ${tr('Totaux des mouvements (ventes et gains)')}</button>
   </div></section>
-  <section class="panel"><h2>Exports & sauvegarde</h2><div class="stack">
-    <button class="btn block" id="s_csv1" type="button">📄 État du stock (CSV / Excel)</button>
-    <button class="btn primary block" id="s_compta" type="button">📒 Récapitulatif comptable du jour…</button>
-    <button class="btn block" id="s_csv2" type="button">📄 Journal des mouvements (CSV / Excel)</button>
-    <button class="btn block" id="s_exp" type="button">💾 Sauvegarde complète (JSON)</button>
-    <button class="btn block" id="s_imp" type="button">📥 Importer (sauvegarde JSON ou liste de stock CSV)</button>
+  <section class="panel"><h2>${tr('Exports & sauvegarde')}</h2><div class="stack">
+    <button class="btn block" id="s_csv1" type="button">📄 ${tr('État du stock (CSV / Excel)')}</button>
+    <button class="btn primary block" id="s_compta" type="button">📒 ${tr('Récapitulatif comptable du jour…')}</button>
+    <button class="btn block" id="s_csv2" type="button">📄 ${tr('Journal des mouvements (CSV / Excel)')}</button>
+    <button class="btn block" id="s_exp" type="button">💾 ${tr('Sauvegarde complète (JSON)')}</button>
+    <button class="btn block" id="s_imp" type="button">📥 ${tr('Importer (sauvegarde JSON ou liste de stock CSV)')}</button>
     <input type="file" id="s_impIn" hidden>
-    <p class="muted small" style="margin:0">CSV : une ligne par produit avec des colonnes comme <i>Code, Nom, Stock, TVA, Achat HT, Vente TTC, Seuil alerte</i> (l'export « État du stock » convient). Depuis Excel : <b>Enregistrer sous → CSV</b>. Les produits existants (même code) sont mis à jour et leur stock est ajusté par un mouvement « Inventaire ».</p>
+    <p class="muted small" style="margin:0">${tr('CSV : une ligne par produit avec des colonnes comme <i>Code, Nom, Stock, TVA, Achat HT, Vente TTC, Seuil alerte</i> (l\'export « État du stock » convient). Depuis Excel : <b>Enregistrer sous → CSV</b>. Les produits existants (même code) sont mis à jour et leur stock est ajusté par un mouvement « Inventaire ».')}</p>
   </div></section>
-  <section class="panel"><h2>Cet appareil</h2>
-    <p class="muted small" style="margin-top:0">Efface les données locales. Si Drive est connecté, elles reviendront à la prochaine synchronisation.</p>
-    <button class="btn danger block" id="s_reset" type="button">Effacer les données de cet appareil</button>
+  <section class="panel"><h2>${tr('Cet appareil')}</h2>
+    <p class="muted small" style="margin-top:0">${tr('Efface les données locales. Si Drive est connecté, elles reviendront à la prochaine synchronisation.')}</p>
+    <button class="btn danger block" id="s_reset" type="button">${tr('Effacer les données de cet appareil')}</button>
   </section>
-  <p class="muted small" style="text-align:center">Version ${APP_VERSION} · <a href="#" id="s_upd">Rechercher une mise à jour</a></p>`;
+  <p class="muted small" style="text-align:center">Version ${APP_VERSION} · <a href="#" id="s_upd">${tr('Rechercher une mise à jour')}</a></p>`;
+  $('#s_lang').onclick = e => {
+    const b = e.target.closest('[data-l]'); if (!b || b.dataset.l === S.lang) return;
+    S.lang = b.dataset.l; saveS(); applyStatic(); updateBadge(); viewSettings();
+  };
   $('#s_cid').addEventListener('change', e => { S.clientId = e.target.value.trim(); saveS(); });
   $('#s_conn').onclick = async () => {
     S.clientId = $('#s_cid').value.trim(); saveS();
-    if (!effectiveClientId()) { toast('Connexion intégrée pas encore disponible : collez un Client ID dans les options avancées', 4500); return; }
-    if (!origin || !window.isSecureContext) { toast('Ouvrez l\'appli via une adresse https:// pour connecter Drive', 4000); return; }
+    if (!effectiveClientId()) { toast(tr('Connexion intégrée pas encore disponible : collez un Client ID dans les options avancées'), 4500); return; }
+    if (!origin || !window.isSecureContext) { toast(tr('Ouvrez l\'appli via une adresse https:// pour connecter Drive'), 4000); return; }
     try { accessToken = null; tokenExp = 0; await getToken(true); S.driveOn = true; saveS(); await syncNow(true); viewSettings(); }
     catch (e) { toast(e.message, 4000); updateBadge(); }
   };
-  $('#s_sync').onclick = () => { if (!S.driveOn) { toast('Connectez d\'abord Google Drive'); return; } syncNow(true); };
+  $('#s_sync').onclick = () => { if (!S.driveOn) { toast(tr('Connectez d\'abord Google Drive')); return; } syncNow(true); };
   $('#s_auto').onchange = e => { S.autoSync = e.target.checked; saveS(); scheduleSync(); };
   if ($('#s_disc')) $('#s_disc').onclick = () => {
-    if (!confirm('Déconnecter Google Drive ?\nLes données restent sur cet appareil et dans Drive.')) return;
+    if (!confirm(tr('Déconnecter Google Drive ?\nLes données restent sur cet appareil et dans Drive.'))) return;
     try { if (accessToken && window.google && google.accounts) google.accounts.oauth2.revoke(accessToken, () => {}); } catch {}
-    accessToken = null; tokenExp = 0; localStorage.removeItem(TKEY); S.driveOn = false; S.fileId = null; S.email = ''; saveS(); updateBadge(); viewSettings(); toast('Déconnecté');
+    accessToken = null; tokenExp = 0; localStorage.removeItem(TKEY); S.driveOn = false; S.fileId = null; S.email = ''; saveS(); updateBadge(); viewSettings(); toast(tr('Déconnecté'));
   };
-  $('#s_tva').onchange = e => { S.tva = num(e.target.value); saveS(); };
+  bindVatField('s_tva', r => { S.tva = r; saveS(); });
   $('#s_csv1').onclick = exportStockCSV;
   $('#s_csv2').onclick = () => exportMovesCSV();
   bindLabelSettings();
   $('#s_tot1').onclick = showStockTotals;
   $('#s_tot2').onclick = showMoveTotals;
   $('#s_compta').onclick = () => { movePeriod = 'today'; showMoveTotals(); };
-  $('#s_exp').onclick = () => download(`stock-sauvegarde-${today()}.json`, JSON.stringify({ app: 'gestion-stock', version: 1, savedAt: nowISO(), products: DB.products, movements: DB.movements }), 'application/json');
+  $('#s_exp').onclick = () => download(`${tr('stock-sauvegarde')}-${today()}.json`, JSON.stringify({ app: 'gestion-stock', version: 1, savedAt: nowISO(), products: DB.products, movements: DB.movements }), 'application/json');
   $('#s_imp').onclick = () => $('#s_impIn').click();
   $('#s_impIn').onchange = async e => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-    if (/\.(xlsx?|ods|numbers)$/i.test(f.name)) { toast('Fichier Excel : enregistrez-le d\'abord au format CSV (Enregistrer sous → CSV)', 5000); return; }
-    let text; try { text = await f.text(); } catch { toast('Fichier illisible'); return; }
+    if (/\.(xlsx?|ods|numbers)$/i.test(f.name)) { toast(tr('Fichier Excel : enregistrez-le d\'abord au format CSV (Enregistrer sous → CSV)'), 5000); return; }
+    let text; try { text = await f.text(); } catch { toast(tr('Fichier illisible')); return; }
     text = text.replace(/^\ufeff/, '');
     if (/^\s*[{[]/.test(text)) {
-      let j; try { j = JSON.parse(text); if (!j || !j.products) throw 0; } catch { toast('Fichier de sauvegarde invalide'); return; }
+      let j; try { j = JSON.parse(text); if (!j || !j.products) throw 0; } catch { toast(tr('Fichier de sauvegarde invalide')); return; }
       askImportMode(j);
       return;
     }
     importStockCSV(text);
   };
   $('#s_upd').onclick = async e => {
-    e.preventDefault(); toast('Recherche de mise à jour…');
+    e.preventDefault(); toast(tr('Recherche de mise à jour…'));
     try {
       if ('serviceWorker' in navigator) { const r = await navigator.serviceWorker.getRegistration(); if (r) await r.update(); }
       if (window.caches) for (const k of await caches.keys()) await caches.delete(k);
@@ -1361,9 +1730,9 @@ function viewSettings() {
     location.reload();
   };
   $('#s_reset').onclick = async () => {
-    if (!confirm('Effacer tous les produits et mouvements de cet appareil ?')) return;
-    if (!S.driveOn && !confirm('Drive n\'est pas connecté : les données seront définitivement perdues. Continuer ?')) return;
-    DB = { products: {}, movements: {} }; S.dirty = false; saveS(); await persist(); updateBadge(); toast('Données locales effacées');
+    if (!confirm(tr('Effacer tous les produits et mouvements de cet appareil ?'))) return;
+    if (!S.driveOn && !confirm(tr('Drive n\'est pas connecté : les données seront définitivement perdues. Continuer ?'))) return;
+    DB = { products: {}, movements: {} }; S.dirty = false; saveS(); await persist(); updateBadge(); toast(tr('Données locales effacées'));
   };
 }
 
@@ -1371,8 +1740,9 @@ function viewSettings() {
 async function init() {
   const t = safeJSON(localStorage.getItem(TKEY)); if (t.t && t.e > Date.now()) { accessToken = t.t; tokenExp = t.e; }
   try { await idb.open(); const d = await idb.get('db'); if (d && d.products) DB = { products: d.products || {}, movements: d.movements || {} }; }
-  catch (e) { toast('Stockage local indisponible : ' + e.message, 5000); }
+  catch (e) { toast(tr('Stockage local indisponible : ') + e.message, 5000); }
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  applyStatic();
   bindMoveDialog();
   $('#btnScan').onclick = () => openScanner(onGlobalScan, true);
   $('#scanMode').onclick = e => { const b = e.target.closest('[data-m]'); if (!b) return; S.scanMode = b.dataset.m; saveS(); renderScanMode(); };
@@ -1385,7 +1755,7 @@ async function init() {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.driveOn && tokenValid() && !isEditing()) syncNow(false); });
   route(); updateBadge();
   if (S.driveOn && tokenValid()) syncNow(false);
-  if (location.protocol === 'file:') toast('Pour la caméra et Google Drive, ouvrez l\'appli via une adresse https://', 6000);
+  if (location.protocol === 'file:') toast(tr('Pour la caméra et Google Drive, ouvrez l\'appli via une adresse https://'), 6000);
 }
 init();
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
@@ -1393,7 +1763,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
   // Nouvelle version installée pendant l'utilisation : pas de rechargement forcé (bloquant avec une mauvaise connexion),
   // elle s'applique à la prochaine ouverture.
   let hadController = !!navigator.serviceWorker.controller, told = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !told) { told = true; toast('Nouvelle version prête : elle s\'appliquera à la prochaine ouverture', 4000); } });
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !told) { told = true; toast(tr('Nouvelle version prête : elle s\'appliquera à la prochaine ouverture'), 4000); } });
 }
 </script>
 </body>
