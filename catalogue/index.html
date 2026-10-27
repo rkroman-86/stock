@@ -101,6 +101,8 @@ main{max-width:1100px;margin:0 auto;padding:14px 16px 40px}
     <label><input type="checkbox" id="nDown"><span id="nDownLbl"></span></label>
   </div>
   <p class="info" id="nInfo"></p>
+  <p class="info" id="nBg"></p>
+  <button class="close" id="nTest" type="button" style="background:var(--surface2);color:var(--text);margin-bottom:8px">🔔 Notification de test</button>
   <button class="close" id="nClose" type="button">OK</button>
 </dialog>
 <script src="watch.js"></script>
@@ -132,7 +134,7 @@ const T = {
         install: '📲 Installer',
         nTitle: 'Notifications', nOn: 'Recevoir des notifications', nOnSub: 'Sur ce téléphone', nNew: '🆕 Nouveaux produits', nUp: '📈 Stock en hausse (réassort)', nDown: '📉 Stock en baisse',
         nInfo: 'Le catalogue est vérifié à chaque ouverture, toutes les 5 minutes quand l\'appli est ouverte, et en arrière-plan quelques fois par jour quand Android le permet (appli installée). Sur iPhone, seulement quand l\'appli est ouverte.',
-        nDenied: 'Notifications bloquées : autorisez-les dans les réglages du téléphone (Chrome → Notifications).', nUnsup: 'Les notifications ne sont pas disponibles sur ce navigateur.',
+        nDenied: 'Notifications bloquées : autorisez-les dans les réglages du téléphone (Chrome → Notifications).', nUnsup: 'Les notifications ne sont pas disponibles sur ce navigateur.', nTestT: 'Test réussi ✅', nTestB: 'Les notifications du catalogue s\'afficheront ici.', bgOn: 'Vérification en arrière-plan : active', bgOff: 'Vérification en arrière-plan : non autorisée par Chrome sur ce téléphone (seulement quand l\'appli est ouverte)', bgNa: 'Vérification en arrière-plan : non disponible (installez l\'appli depuis Chrome Android)',
         ban: 'Être prévenu des nouveautés et des changements de stock ?', banYes: '🔔 Activer', chNew: 'Nouveau', chUp: '▲ Réassort', chDown: '▼ Baisse', ios: 'Pour l\'installer : touchez Partager ⬆️ puis « Sur l\'écran d\'accueil ».', errGone: 'Ce catalogue n\'est plus disponible.', errNet: 'Impossible de charger le catalogue. Vérifiez votre connexion puis réessayez.', retry: 'Réessayer', offline: 'hors ligne (dernière version)' },
   en: { title: 'Catalogue', search: 'Search a product or code…', onlyIn: 'In stock only', avail: n => `${n} available`, out: 'Out of stock', ttc: 'incl. VAT', ht: 'excl. VAT',
         order: 'Ask on WhatsApp', msg: (n, c) => `Hello, I would like to order:\n• ${n}${c ? ` (ref. ${c})` : ''}\nQuantity: `,
@@ -144,7 +146,7 @@ const T = {
         install: '📲 Install',
         nTitle: 'Notifications', nOn: 'Receive notifications', nOnSub: 'On this phone', nNew: '🆕 New products', nUp: '📈 Stock up (restock)', nDown: '📉 Stock down',
         nInfo: 'The catalogue is checked each time it opens, every 5 minutes while open, and in the background a few times a day when Android allows it (installed app). On iPhone, only while the app is open.',
-        nDenied: 'Notifications are blocked: allow them in your phone settings (Chrome → Notifications).', nUnsup: 'Notifications are not available in this browser.',
+        nDenied: 'Notifications are blocked: allow them in your phone settings (Chrome → Notifications).', nUnsup: 'Notifications are not available in this browser.', nTestT: 'Test successful ✅', nTestB: 'Catalogue notifications will appear here.', bgOn: 'Background check: active', bgOff: 'Background check: not allowed by Chrome on this phone (only while the app is open)', bgNa: 'Background check: not available (install the app from Chrome on Android)',
         ban: 'Get notified about new products and stock changes?', banYes: '🔔 Enable', chNew: 'New', chUp: '▲ Restock', chDown: '▼ Down', ios: 'To install: tap Share ⬆️ then “Add to Home Screen”.', errGone: 'This catalogue is no longer available.', errNet: 'Could not load the catalogue. Check your connection and try again.', retry: 'Try again', offline: 'offline (last version)' }
 };
 let L = T.fr, LOC = 'fr-FR', DATA = null, CHG = {}, offline = false, retryT = null;
@@ -268,6 +270,11 @@ async function openNotifDlg() {
   $('#nTitle').textContent = L.nTitle; $('#nOnLbl').textContent = L.nOn; $('#nOnSub').textContent = L.nOnSub;
   $('#nNewLbl').textContent = L.nNew; $('#nUpLbl').textContent = L.nUp; $('#nDownLbl').textContent = L.nDown;
   $('#nInfo').textContent = Notification.permission === 'denied' ? L.nDenied : L.nInfo;
+  $('#nBg').textContent = '';
+  (async () => { try { const reg = await navigator.serviceWorker.ready; if (!reg.periodicSync) { $('#nBg').textContent = L.bgNa; return; }
+    const perm = await navigator.permissions.query({ name: 'periodic-background-sync' }).catch(() => ({ state: 'denied' }));
+    const tags = perm.state === 'granted' ? await reg.periodicSync.getTags() : [];
+    $('#nBg').textContent = tags.includes('catalogue-check') ? L.bgOn : perm.state === 'granted' ? '' : L.bgOff; } catch {} })();
   $('#nOn').checked = pr.on && Notification.permission === 'granted';
   $('#nNew').checked = pr.newP; $('#nUp').checked = pr.up; $('#nDown').checked = pr.down;
   $('#nSub').classList.toggle('off', !$('#nOn').checked);
@@ -275,6 +282,12 @@ async function openNotifDlg() {
 }
 $('#bell').onclick = openNotifDlg;
 $('#nClose').onclick = () => $('#nDlg').close();
+$('#nTest').onclick = async () => {
+  if (Notification.permission !== 'granted' && !(await enableNotif())) return;
+  $('#nOn').checked = true; $('#nSub').classList.remove('off');
+  try { const reg = await navigator.serviceWorker.ready; await reg.showNotification(L.nTestT, { body: L.nTestB, tag: 'catalogue-test', icon: 'icon-192.png', data: { url: './' } }); }
+  catch (e) { alert(e.message); }
+};
 $('#nOn').onchange = async e => {
   const ok = e.target.checked ? await enableNotif() : (await savePrefs({ on: false }), false);
   e.target.checked = ok; $('#nSub').classList.toggle('off', !ok);
