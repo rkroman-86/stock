@@ -1,10 +1,9 @@
 // Service worker : rend l'appli installable et utilisable hors ligne.
 // Changer VERSION à chaque mise à jour importante pour forcer le rafraîchissement du cache.
-const VERSION = 'stock-v18';
+const VERSION = 'stock-v19';
 const SHELL = [
   './',
   './index.html',
-  './catalogue.html',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
@@ -26,7 +25,7 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (k !== VERSION) await caches.delete(k);
+    for (const k of await caches.keys()) if (k.startsWith('stock-') && k !== VERSION) await caches.delete(k);
     await self.clients.claim();
   })());
 });
@@ -48,6 +47,8 @@ self.addEventListener('fetch', e => {
 
   // Fichiers de l'appli : réseau d'abord pour recevoir les mises à jour,
   // mais si le réseau ne répond pas en 3 s (mauvaise connexion), on sert la copie en cache.
+  // Le catalogue public est une appli séparée avec son propre service worker
+  if (url.origin === location.origin && /\/catalogue(\/|\.html)/.test(url.pathname)) return;
   if (url.origin === location.origin) {
     e.respondWith((async () => {
       const cached = caches.match(req, { ignoreSearch: true }).then(r => r || (req.mode === 'navigate' ? caches.match('./index.html') : undefined));

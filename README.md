@@ -32,11 +32,11 @@ Paramètres → **Catalogue public** : l'appli publie un 2e fichier `gestion-sto
 partagé en lecture « tous les utilisateurs disposant du lien ». Il ne contient que nom, photo réduite, code-barres,
 quantité disponible et prix de vente HT/TTC (jamais les prix d'achat ni les mouvements). Il est mis à jour à chaque synchronisation.
 
-La page `catalogue.html?f=<ID du fichier>` l'affiche aux clients ; chaque carte a un bouton **Demander sur WhatsApp**
+La page `catalogue/?f=<ID du fichier>` (appli installable séparée : nom « Catalogue », icône orange) l'affiche aux clients ; chaque carte a un bouton **Demander sur WhatsApp**
 qui ouvre WhatsApp vers le numéro du magasin avec le nom et la référence préremplis — le client ajoute la quantité.
 Pas d'achat en ligne.
 
-Pour l'éditeur : la page publique lit le fichier avec une **clé d'API** (`BUILTIN_API_KEY`, dans `index.html` **et** `catalogue.html`).
+Pour l'éditeur : la page publique lit le fichier avec une **clé d'API** (`BUILTIN_API_KEY`, dans `index.html` **et** `catalogue/index.html`).
 Google Cloud Console → Identifiants → Créer → Clé API ; restrictions : API = *Google Drive API*, sites = `https://rkroman-86.github.io/*`.
 
 ## APK Android

@@ -223,7 +223,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <script>
 'use strict';
 /* ====== Constantes ====== */
-const APP_VERSION = '16';
+const APP_VERSION = '17';
 const FILE_NAME = 'gestion-stock-donnees.json';
 const CATALOG_NAME = 'gestion-stock-catalogue.json';   // 2e fichier : vitrine publique (lecture seule, sans prix d'achat ni mouvements)
 // Clé d'API Google (restreinte à « Google Drive API » et au site https://rkroman-86.github.io/*) :
@@ -1305,7 +1305,7 @@ async function publishCatalog() {
 }
 function catalogURL() {
   if (!S.catalogId) return '';
-  const u = new URL('catalogue.html', location.href.split('#')[0]);
+  const u = new URL('catalogue/', location.href.split('#')[0]);
   u.search = ''; u.searchParams.set('f', S.catalogId);
   if (S.apiKey) u.searchParams.set('k', S.apiKey);   // clé personnelle (hébergement ailleurs)
   return u.href;
