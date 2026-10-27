@@ -25,8 +25,23 @@ function diffCat(prev, data) {
   }
   return d;
 }
+// Lecture du fichier public. Si www.googleapis.com ne répond pas (réseau, filtre DNS…), on essaie un 2e serveur Google.
+const DRIVE_HOSTS = ['https://www.googleapis.com', 'https://content.googleapis.com'];
+async function driveGet(f, k) {
+  let err;
+  for (const h of DRIVE_HOSTS) {
+    try { return await fetch(`${h}/drive/v3/files/${f}?alt=media&key=${encodeURIComponent(k)}`, { cache: 'no-store', credentials: 'omit' }); }
+    catch (e) { err = e; }
+  }
+  throw err;
+}
+// Diagnostic quand rien ne passe : serveur injoignable, ou réponse refusée par le navigateur (CORS) ?
+async function driveDiag() {
+  try { await fetch('https://www.googleapis.com/discovery/v1/apis?name=drive', { mode: 'no-cors', cache: 'no-store' }); return 'cors'; }
+  catch { return 'net'; }
+}
 async function fetchCat(f, k) {
-  const r = await fetch(`https://www.googleapis.com/drive/v3/files/${f}?alt=media&key=${encodeURIComponent(k)}`, { cache: 'no-store' });
+  const r = await driveGet(f, k);
   if (!r.ok) throw Object.assign(new Error('HTTP ' + r.status), { status: r.status });
   const j = await r.json();
   if (!j || !Array.isArray(j.products)) throw new Error('format');

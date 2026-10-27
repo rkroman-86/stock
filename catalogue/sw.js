@@ -1,6 +1,6 @@
 // Service worker du catalogue public (appli séparée de « Gestion de stock », portée ./catalogue/).
 importScripts('watch.js');
-const VERSION = 'catalogue-v3';
+const VERSION = 'catalogue-v4';
 const SHELL = ['./', './index.html', './watch.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));

@@ -166,7 +166,7 @@ async function load(silent) {
   if (!API_KEY) return fail(L.errKey);
   if (!silent) $('#grid').innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div>';
   try {
-    const r = await fetch(`https://www.googleapis.com/drive/v3/files/${FILE_ID}?alt=media&key=${encodeURIComponent(API_KEY)}`, { cache: 'no-store' });
+    const r = await driveGet(FILE_ID, API_KEY);
     if (r.status === 404 || r.status === 403 && !(await r.clone().text()).includes('API key')) return fail(L.errGone);
     if (r.status === 400 || r.status === 403) return fail(L.errKey);
     if (!r.ok) throw new Error(r.status);
@@ -179,7 +179,7 @@ async function load(silent) {
     offline = true;
     // Pas de réseau : on affiche la dernière version reçue sur ce téléphone
     try { const c = await (await caches.open(WATCH_CACHE)).match(LAST_URL); const last = c && await c.json(); if (last && last.f === FILE_ID) { DATA = last.data; offline = true; } } catch {}
-    if (!DATA) { fail(L.errNet, true, (navigator.onLine === false ? 'offline' : 'code ' + (e.message || e.name || '?'))); clearTimeout(retryT); retryT = setTimeout(() => load(), 15000); return; }
+    if (!DATA) { fail(L.errNet, true, (navigator.onLine === false ? 'offline' : (e.message || e.name || '?') + (e instanceof TypeError ? ' · ' + (await driveDiag()) : ''))); clearTimeout(retryT); retryT = setTimeout(() => load(), 15000); return; }
   }
   if (!offline) await trackChanges().catch(() => {});
   setLang(DATA.lang === 'en' ? 'en' : 'fr');
