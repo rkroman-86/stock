@@ -36,6 +36,11 @@ La page `catalogue/?f=<ID du fichier>` (appli installable séparée : nom « Cat
 qui ouvre WhatsApp vers le numéro du magasin avec le nom et la référence préremplis — le client ajoute la quantité.
 Pas d'achat en ligne.
 
+Notifications (🔔 dans l'appli Catalogue, réglables séparément : nouveaux produits, stock en hausse, stock en baisse — tout activé par défaut).
+Sans serveur : le catalogue est comparé à la dernière version vue sur le téléphone (`catalogue/watch.js`) à l'ouverture,
+toutes les 5 min quand l'appli est ouverte, et en arrière-plan via *Periodic Background Sync* (Chrome Android, appli installée,
+fréquence décidée par le système). Les cartes modifiées portent un badge Nouveau / Réassort / Baisse.
+
 Pour l'éditeur : la page publique lit le fichier avec une **clé d'API** (`BUILTIN_API_KEY`, dans `index.html` **et** `catalogue/index.html`).
 Google Cloud Console → Identifiants → Créer → Clé API ; restrictions : API = *Google Drive API*, sites = `https://rkroman-86.github.io/*`.
 
