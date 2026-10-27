@@ -7,7 +7,8 @@ Application web de gestion de stock pour petite entreprise, utilisable sur tél�
 - scan de codes-barres avec la caméra ;
 - étiquettes image à partager vers l'appli de n'importe quelle imprimante (Phomemo, Tiny Print…) ;
 - totaux du stock et des mouvements, exports CSV ;
-- données enregistrées sur l'appareil et synchronisées dans Google Drive.
+- données enregistrées sur l'appareil et synchronisées dans Google Drive ;
+- catalogue public facultatif (stock et prix visibles par les clients, demandes via WhatsApp).
 
 Hébergée sur GitHub Pages : la page est un fichier statique, **aucune donnée n'est envoyée à GitHub**.
 Les données restent sur l'appareil et dans le fichier `gestion-stock-donnees.json` de votre Google Drive.
@@ -24,6 +25,19 @@ Voir la [politique de confidentialité](confidentialite.html).
 
 Pour l'éditeur : le Client ID OAuth intégré se trouve dans `index.html` (`BUILTIN_CLIENT_ID`).
 Dans Google Cloud Console, son origine JavaScript autorisée est `https://rkroman-86.github.io`.
+
+## Catalogue public (vitrine + WhatsApp)
+
+Paramètres → **Catalogue public** : l'appli publie un 2e fichier `gestion-stock-catalogue.json` dans le Drive,
+partagé en lecture « tous les utilisateurs disposant du lien ». Il ne contient que nom, photo réduite, code-barres,
+quantité disponible et prix de vente HT/TTC (jamais les prix d'achat ni les mouvements). Il est mis à jour à chaque synchronisation.
+
+La page `catalogue.html?f=<ID du fichier>` l'affiche aux clients ; chaque carte a un bouton **Demander sur WhatsApp**
+qui ouvre WhatsApp vers le numéro du magasin avec le nom et la référence préremplis — le client ajoute la quantité.
+Pas d'achat en ligne.
+
+Pour l'éditeur : la page publique lit le fichier avec une **clé d'API** (`BUILTIN_API_KEY`, dans `index.html` **et** `catalogue.html`).
+Google Cloud Console → Identifiants → Créer → Clé API ; restrictions : API = *Google Drive API*, sites = `https://rkroman-86.github.io/*`.
 
 ## APK Android
 

@@ -22,7 +22,7 @@ code{background:var(--bg);padding:1px 5px;border-radius:5px;font-size:14px}
 <p><a href="./">← Retour à l'application</a></p>
 <article>
 <h1>Politique de confidentialité</h1>
-<p class="muted">Application « Gestion de stock » — éditeur : plug-your-home — dernière mise à jour : 24 octobre 2026</p>
+<p class="muted">Application « Gestion de stock » — éditeur : plug-your-home — dernière mise à jour : 27 octobre 2026</p>
 
 <h2>En résumé</h2>
 <p>L'application ne dispose d'aucun serveur. Vos données restent sur votre appareil et, si vous le choisissez, dans votre propre Google Drive. L'éditeur n'y a jamais accès.</p>
@@ -34,6 +34,10 @@ code{background:var(--bg);padding:1px 5px;border-radius:5px;font-size:14px}
 <p>Si vous connectez Google Drive, l'application enregistre vos données dans un fichier nommé <code>gestion-stock-donnees.json</code> dans <b>votre</b> Google Drive, afin de les sauvegarder et de les synchroniser entre vos appareils.</p>
 <p>L'application demande uniquement l'autorisation <code>drive.file</code> : elle peut seulement lire et modifier les fichiers qu'elle a elle-même créés. Elle n'a accès à aucun autre fichier de votre Drive.</p>
 <p>La connexion se fait directement entre votre navigateur et Google. Le jeton d'accès fourni par Google est conservé temporairement sur votre appareil et n'est transmis à personne d'autre. L'utilisation et le transfert des informations reçues des API Google respectent les <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">règles relatives aux données utilisateur des services d'API Google</a>, y compris les exigences d'utilisation limitée.</p>
+
+<h2>Catalogue public (facultatif)</h2>
+<p>Si vous activez le catalogue public, l'application crée un deuxième fichier, <code>gestion-stock-catalogue.json</code>, dans votre Google Drive et le partage en lecture avec « tous les utilisateurs disposant du lien ». Il contient uniquement ce que vous choisissez de montrer à vos clients : nom de la boutique, numéro WhatsApp, et pour chaque produit son nom, sa photo réduite, son code-barres, la quantité disponible et le prix de vente HT/TTC. Les prix d'achat, les mouvements de stock et les notes n'y figurent jamais.</p>
+<p>La page <code>catalogue.html</code> lit ce fichier directement chez Google, sans connexion ni compte pour le visiteur. Le bouton WhatsApp ouvre l'application WhatsApp du visiteur avec un message prérempli : l'échange a lieu ensuite entre le visiteur et vous, sans passer par l'application. Désactiver le catalogue retire le partage public ; supprimer le fichier dans Drive l'efface définitivement.</p>
 
 <h2>Ce que l'application ne fait pas</h2>
 <p>Aucune donnée n'est envoyée à l'éditeur ni à un tiers. Pas de compte à créer, pas de publicité, pas de mesure d'audience, pas de cookies de suivi, aucune revente de données.</p>

@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="robots" content="noindex">
+<title>Catalogue</title>
+<link rel="icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#f3f4f1; --surface:#fff; --surface2:#eceee9; --text:#1b1f1d; --muted:#69716c; --line:#dcdfda;
+  --accent:#0f766e; --accent-ink:#fff; --ok:#15803d; --ok-bg:#e5f5ea; --zero:#b91c1c; --zero-bg:#fde4e4;
+  --wa:#1fa855; --wa-ink:#fff; --radius:14px; --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#111413; --surface:#1a1f1d; --surface2:#232926; --text:#e7ebe8; --muted:#97a09a; --line:#2e3532;
+  --accent:#2dd4bf; --accent-ink:#04201c; --ok:#4ade80; --ok-bg:#12301e; --zero:#f87171; --zero-bg:#3d1717;
+  --wa:#25d366; --wa-ink:#062b14; --shadow:none;
+}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--accent);color:var(--accent-ink);padding:18px 16px 16px}
+header .in{max-width:1100px;margin:0 auto}
+header h1{margin:0;font-size:22px;line-height:1.2}
+header p{margin:4px 0 0;font-size:13px;opacity:.85}
+main{max-width:1100px;margin:0 auto;padding:14px 16px 40px}
+.tools{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.tools input{flex:1 1 220px;font:inherit;font-size:16px;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px;min-width:0}
+.tools input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+.tools label{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);white-space:nowrap}
+.tools label input{flex:none;width:20px;height:20px;padding:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+.thumb{aspect-ratio:4/3;background:var(--surface2);display:grid;place-items:center;font-size:44px;color:var(--muted)}
+.thumb img{width:100%;height:100%;object-fit:contain;display:block}
+.body{padding:12px;display:flex;flex-direction:column;gap:6px;flex:1}
+.body h2{margin:0;font-size:16px;line-height:1.3;overflow-wrap:anywhere}
+.code{font:12px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);letter-spacing:.04em}
+.row{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:auto;padding-top:4px}
+.price b{font-size:20px;display:block;line-height:1.1}
+.price small{color:var(--muted);font-size:12px}
+.qty{font-size:13px;font-weight:600;padding:4px 9px;border-radius:999px;white-space:nowrap;background:var(--ok-bg);color:var(--ok)}
+.qty.zero{background:var(--zero-bg);color:var(--zero)}
+.wa{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 12px 12px;min-height:46px;border-radius:12px;background:var(--wa);color:var(--wa-ink);font-weight:700;text-decoration:none;font-size:15px}
+.wa:active{transform:scale(.98)}
+.wa svg{width:20px;height:20px;flex:none}
+.msg{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px 18px;text-align:center;color:var(--muted)}
+.msg b{color:var(--text)}
+.note{text-align:center;color:var(--muted);font-size:13px;margin-top:22px}
+.skel{height:300px;border-radius:var(--radius);background:linear-gradient(90deg,var(--surface) 0,var(--surface2) 50%,var(--surface) 100%);background-size:200% 100%;animation:sh 1.2s infinite}
+@keyframes sh{to{background-position:-200% 0}}
+@media(max-width:420px){.grid{grid-template-columns:1fr 1fr;gap:10px}.body{padding:10px}.body h2{font-size:14px}.price b{font-size:17px}.row{flex-direction:column;align-items:flex-start}.wa{margin:0 10px 10px;font-size:14px}}
+</style>
+</head>
+<body>
+<header><div class="in"><h1 id="shop">Catalogue</h1><p id="sub"></p></div></header>
+<main>
+  <div class="tools" id="tools" hidden>
+    <input id="q" type="search" autocomplete="off">
+    <label><input type="checkbox" id="onlyIn"> <span id="onlyInLbl"></span></label>
+  </div>
+  <div id="grid" class="grid"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+  <p class="note" id="note"></p>
+</main>
+<script>
+'use strict';
+// Page publique, en lecture seule : lit le fichier catalogue partagé (« tous les utilisateurs disposant du lien »)
+// dans le Google Drive du commerçant. Aucune connexion Google n'est demandée au visiteur.
+// Clé d'API Google : restreinte à « Google Drive API » et au site https://rkroman-86.github.io/* (à renseigner).
+const BUILTIN_API_KEY = '';
+const BUILTIN_ORIGIN = 'https://rkroman-86.github.io';
+
+const P = new URLSearchParams(location.search);
+const FILE_ID = (P.get('f') || '').replace(/[^\w-]/g, '');
+const API_KEY = P.get('k') || (location.origin === BUILTIN_ORIGIN ? BUILTIN_API_KEY : '');
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const T = {
+  fr: { title: 'Catalogue', search: 'Rechercher un produit ou un code…', onlyIn: 'En stock seulement', avail: n => `${n} disponible${n > 1 ? 's' : ''}`, out: 'Rupture', ttc: 'TTC', ht: 'HT',
+        order: 'Demander sur WhatsApp', msg: (n, c) => `Bonjour, je souhaite commander :\n• ${n}${c ? ` (réf. ${c})` : ''}\nQuantité : `,
+        upd: d => `Stock mis à jour le ${d}`, count: n => `${n} produit${n > 1 ? 's' : ''}`, none: 'Aucun produit ne correspond.', empty: 'Aucun produit pour le moment.',
+        foot: 'Consultation du stock uniquement — pas de paiement en ligne. Touchez « Demander sur WhatsApp », indiquez la quantité souhaitée et envoyez : le magasin vous répond pour confirmer.',
+        noWa: 'Pour commander, contactez directement le magasin.',
+        errLink: 'Lien de catalogue incomplet. Demandez au magasin de vous renvoyer le lien.',
+        errKey: 'Ce catalogue n\'est pas encore configuré (clé d\'accès manquante).',
+        errGone: 'Ce catalogue n\'est plus disponible.', errNet: 'Impossible de charger le catalogue. Vérifiez votre connexion puis réessayez.', retry: 'Réessayer' },
+  en: { title: 'Catalogue', search: 'Search a product or code…', onlyIn: 'In stock only', avail: n => `${n} available`, out: 'Out of stock', ttc: 'incl. VAT', ht: 'excl. VAT',
+        order: 'Ask on WhatsApp', msg: (n, c) => `Hello, I would like to order:\n• ${n}${c ? ` (ref. ${c})` : ''}\nQuantity: `,
+        upd: d => `Stock updated ${d}`, count: n => `${n} product${n > 1 ? 's' : ''}`, none: 'No product matches.', empty: 'No products yet.',
+        foot: 'Stock display only — no online payment. Tap “Ask on WhatsApp”, enter the quantity you want and send: the shop will reply to confirm.',
+        noWa: 'To order, please contact the shop directly.',
+        errLink: 'Incomplete catalogue link. Ask the shop to send you the link again.',
+        errKey: 'This catalogue is not configured yet (missing access key).',
+        errGone: 'This catalogue is no longer available.', errNet: 'Could not load the catalogue. Check your connection and try again.', retry: 'Try again' }
+};
+let L = T.fr, LOC = 'fr-FR', DATA = null;
+const eur = n => new Intl.NumberFormat(LOC, { style: 'currency', currency: 'EUR' }).format(+n || 0);
+const fmtQty = n => { const v = +n || 0; return Number.isInteger(v) ? String(v) : v.toLocaleString(LOC, { maximumFractionDigits: 3 }); };
+const WA_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>';
+
+function setLang(l) { L = T[l] || T.fr; LOC = l === 'en' ? 'en-GB' : 'fr-FR'; document.documentElement.lang = l === 'en' ? 'en' : 'fr'; $('#q').placeholder = L.search; $('#onlyInLbl').textContent = L.onlyIn; }
+function fail(text, retry) {
+  $('#tools').hidden = true; $('#note').textContent = '';
+  $('#grid').innerHTML = `<div class="msg" style="grid-column:1/-1"><b>${esc(text)}</b>${retry ? `<p><button id="retry" style="font:inherit;padding:10px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--text)">${esc(L.retry)}</button></p>` : ''}</div>`;
+  if (retry) $('#retry').onclick = load;
+}
+
+async function load() {
+  setLang(/^en/i.test(navigator.language || '') ? 'en' : 'fr');
+  if (!FILE_ID) return fail(L.errLink);
+  if (!API_KEY) return fail(L.errKey);
+  $('#grid').innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div>';
+  try {
+    const r = await fetch(`https://www.googleapis.com/drive/v3/files/${FILE_ID}?alt=media&key=${encodeURIComponent(API_KEY)}`, { cache: 'no-store' });
+    if (r.status === 404 || r.status === 403 && !(await r.clone().text()).includes('API key')) return fail(L.errGone);
+    if (r.status === 400 || r.status === 403) return fail(L.errKey);
+    if (!r.ok) throw new Error(r.status);
+    DATA = await r.json();
+    if (!DATA || !Array.isArray(DATA.products)) throw new Error('format');
+  } catch { return fail(L.errNet, true); }
+  setLang(DATA.lang === 'en' ? 'en' : 'fr');
+  const shop = DATA.shop || L.title;
+  $('#shop').textContent = shop; document.title = shop;
+  $('#sub').textContent = [L.count(DATA.products.length), DATA.updatedAt ? L.upd(new Date(DATA.updatedAt).toLocaleString(LOC, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })) : ''].filter(Boolean).join(' · ');
+  $('#note').textContent = DATA.whatsapp ? L.foot : L.noWa;
+  $('#tools').hidden = !DATA.products.length;
+  render();
+}
+
+function render() {
+  const g = $('#grid'), q = $('#q').value.trim().toLowerCase(), only = $('#onlyIn').checked;
+  const list = DATA.products.filter(p => (!q || (p.name || '').toLowerCase().includes(q) || (p.code || '').includes(q)) && (!only || p.qty > 0));
+  if (!list.length) { g.innerHTML = `<div class="msg" style="grid-column:1/-1">${esc(DATA.products.length ? L.none : L.empty)}</div>`; return; }
+  g.innerHTML = list.map(p => {
+    const out = !(p.qty > 0);
+    const wa = DATA.whatsapp ? `<a class="wa" href="https://wa.me/${DATA.whatsapp}?text=${encodeURIComponent(L.msg(p.name, p.code))}" target="_blank" rel="noopener">${WA_ICON}${esc(L.order)}</a>` : '';
+    return `<article class="card">
+      <div class="thumb">${p.photo ? `<img src="${p.photo}" alt="${esc(p.name)}" loading="lazy">` : '📦'}</div>
+      <div class="body">
+        <h2>${esc(p.name)}</h2>
+        ${p.code ? `<div class="code">${esc(p.code)}</div>` : ''}
+        <div class="row">
+          <div class="price"><b>${eur(p.priceTTC)} <small>${L.ttc}</small></b>${DATA.showHT !== false ? `<small>${eur(p.priceHT)} ${L.ht}</small>` : ''}</div>
+          <span class="qty${out ? ' zero' : ''}">${out ? L.out : L.avail(fmtQty(p.qty))}</span>
+        </div>
+      </div>${wa}</article>`;
+  }).join('');
+}
+
+$('#q').addEventListener('input', () => DATA && render());
+$('#onlyIn').addEventListener('change', () => DATA && render());
+load();
+</script>
+</body>
+</html>

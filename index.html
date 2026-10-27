@@ -223,14 +223,19 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <script>
 'use strict';
 /* ====== Constantes ====== */
-const APP_VERSION = '15';
+const APP_VERSION = '16';
 const FILE_NAME = 'gestion-stock-donnees.json';
+const CATALOG_NAME = 'gestion-stock-catalogue.json';   // 2e fichier : vitrine publique (lecture seule, sans prix d'achat ni mouvements)
+// Clé d'API Google (restreinte à « Google Drive API » et au site https://rkroman-86.github.io/*) :
+// permet à la page publique catalogue.html de lire le fichier catalogue sans connexion Google.
+const BUILTIN_API_KEY = '';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 // Client ID OAuth intégré : permet à tous les utilisateurs de connecter LEUR Google Drive sans configuration.
 // Valable uniquement depuis l'adresse officielle (origine autorisée dans Google Cloud).
 const BUILTIN_CLIENT_ID = '530939683660-tb54h39u61fjl1t3ahintjms1e12o4nv.apps.googleusercontent.com';
 const BUILTIN_ORIGIN = 'https://rkroman-86.github.io';
 const effectiveClientId = () => S.clientId || (location.origin === BUILTIN_ORIGIN ? BUILTIN_CLIENT_ID : '');
+const effectiveApiKey = () => S.apiKey || (location.origin === BUILTIN_ORIGIN ? BUILTIN_API_KEY : '');
 const SKEY = 'stock.settings', TKEY = 'stock.token';
 const TYPES = {
   in:  { achat: 'Achat fournisseur', retour: 'Retour client', inventaire: 'Inventaire' },
@@ -589,7 +594,29 @@ const EN = {
 "Ouvrir la fiche": "Open product",
 "Sortie rapide (vente)": "Quick sale",
 "N° de commande, client, facture…": "Order no., customer, invoice…",
-"ou saisir le code…": "or type the code…"
+"ou saisir le code…": "or type the code…",
+"Catalogue : erreur ": "Catalogue: error ",
+"Catalogue : partage public impossible (erreur {n})": "Catalogue: public sharing failed (error {n})",
+"Catalogue désactivé": "Catalogue disabled",
+"Connectez Google Drive pour publier le catalogue": "Connect Google Drive to publish the catalogue",
+"Publication à la prochaine synchronisation": "Will be published at the next sync",
+"Catalogue publié": "Catalogue published",
+"Clé d'API Google manquante : la page publique ne pourra pas lire le fichier (voir options avancées).": "Google API key missing: the public page won't be able to read the file (see advanced options).",
+"Catalogue public (vitrine)": "Public catalogue (shop window)",
+"Un 2e fichier <code>{f}</code> est publié dans votre Drive, lisible par tous via un lien : nom, photo, code-barres, quantité disponible et prix de vente. Vos clients voient le stock et vous envoient leur demande sur WhatsApp — pas d'achat en ligne. Les prix d'achat et les mouvements ne sont jamais publiés.": "A 2nd file <code>{f}</code> is published in your Drive, readable by anyone with the link: name, photo, barcode, available quantity and selling price. Customers see your stock and send their request on WhatsApp — no online purchase. Purchase prices and movements are never published.",
+"Publier le catalogue public": "Publish the public catalogue",
+"Nom de la boutique": "Shop name",
+"Ma boutique": "My shop",
+"Numéro WhatsApp qui reçoit les demandes": "WhatsApp number receiving requests",
+"Afficher aussi les produits en rupture": "Also show out-of-stock products",
+"Afficher le prix HT en plus du TTC": "Show price excl. VAT as well",
+"Partager le lien": "Share link",
+"Ouvrir": "Open",
+"Clé d'API Google (catalogue public)": "Google API key (public catalogue)",
+"Seulement pour le catalogue public avec votre propre projet : <b>Identifiants → Créer → Clé API</b>, limitée à <b>Google Drive API</b> et aux sites <code>{o}/*</code>.": "Only for the public catalogue with your own project: <b>Credentials → Create → API key</b>, restricted to <b>Google Drive API</b> and websites <code>{o}/*</code>.",
+"Numéro WhatsApp invalide : indiquez-le au format international (+33…)": "Invalid WhatsApp number: use international format (+44…)",
+"Catalogue": "Catalogue",
+"Lien copié": "Link copied"
 };
 // Les textes sont écrits en français dans le code ; tr() renvoie la traduction anglaise si la langue est EN.
 // {nom} dans un texte est remplacé par la valeur correspondante.
@@ -628,7 +655,10 @@ const idb = {
 };
 
 /* ====== État ====== */
-let DB = { products: {}, movements: {} };
+let DB = { products: {}, movements: {}, config: {} };
+// Réglages partagés entre appareils (enregistrés dans le fichier Drive) : chaque entrée porte son updatedAt
+const catCfg = () => Object.assign({ on: false, shop: '', phone: '', showOut: true, showHT: true }, (DB.config || {}).catalog || {});
+function setCat(patch) { DB.config = DB.config || {}; DB.config.catalog = { ...catCfg(), ...patch, updatedAt: nowISO() }; touch(); }
 let S = Object.assign({ lang: /^fr/i.test(navigator.language || 'fr') ? 'fr' : 'en', clientId: '', tva: 20, autoSync: true, fileId: null, driveOn: false, lastSync: null, dirty: false }, safeJSON(localStorage.getItem(SKEY)));
 let ver = 0;
 const saveS = () => localStorage.setItem(SKEY, JSON.stringify(S));
@@ -1172,10 +1202,10 @@ async function syncNow(interactive) {
     let changed = 0;
     if (fileId) {
       const r = await api(`${base}/${fileId}?alt=media`);
-      if (r.ok) { const remote = await r.json().catch(() => null); if (remote) { let n; [DB.products, n] = mergeColl(DB.products, remote.products); changed += n; [DB.movements, n] = mergeColl(DB.movements, remote.movements); changed += n; } }
+      if (r.ok) { const remote = await r.json().catch(() => null); if (remote) { let n; [DB.products, n] = mergeColl(DB.products, remote.products); changed += n; [DB.movements, n] = mergeColl(DB.movements, remote.movements); changed += n; [DB.config, n] = mergeColl(DB.config || {}, remote.config); changed += n; } }
     }
     if (dedupeByCode()) { changed++; ver++; }
-    const body = JSON.stringify({ app: 'gestion-stock', version: 1, savedAt: nowISO(), products: DB.products, movements: DB.movements });
+    const body = JSON.stringify({ app: 'gestion-stock', version: 1, savedAt: nowISO(), products: DB.products, movements: DB.movements, config: DB.config || {} });
     if (fileId) {
       const r = await api(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
       if (!r.ok) throw new Error(tr('Envoi vers Drive : erreur ') + r.status);
@@ -1189,11 +1219,104 @@ async function syncNow(interactive) {
     if (!S.email) rememberAccount();
     S.fileId = fileId; S.lastSync = nowISO(); if (ver === v0) S.dirty = false; saveS();
     if (changed) await persist();
+    await publishCatalog();
     syncState = 'idle';
     if (changed && !isEditing()) rerender();
     if (interactive) toast(changed ? tr('Synchronisé · {n} mise(s) à jour reçue(s)', { n: changed }) : tr('Synchronisé'));
   } catch (e) { if (e.auth && !interactive) { syncState = 'idle'; syncErr = ''; } else { syncState = 'error'; syncErr = e.message; } if (interactive) toast(e.message, 4000); }
   finally { syncing = false; updateBadge(); if (ver !== v0) scheduleSync(); }
+}
+/* ====== Catalogue public (2e fichier Drive, lisible par tous via le lien) ====== */
+// Contient uniquement : nom, photo (réduite), code-barres, quantité disponible, prix de vente HT/TTC.
+// Jamais les prix d'achat, les mouvements ni les notes.
+let catErr = '';
+const catThumbs = new Map();
+function catThumb(p) {
+  if (!p.photo) return Promise.resolve(null);
+  const k = p.id + '|' + (p.updatedAt || '') + '|' + p.photo.length;
+  if (catThumbs.has(k)) return Promise.resolve(catThumbs.get(k));
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => { const s = Math.min(1, 360 / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); const d = c.toDataURL('image/jpeg', 0.7); catThumbs.set(k, d); res(d); };
+    img.onerror = () => res(null);
+    img.src = p.photo;
+  });
+}
+const waDigits = v => { let d = String(v || '').replace(/[^\d+]/g, ''); if (d.startsWith('+')) d = d.slice(1); else if (d.startsWith('00')) d = d.slice(2); else if (/^0\d{9}$/.test(d)) d = '33' + d.slice(1); return d.replace(/\D/g, ''); };
+async function buildCatalog() {
+  const c = catCfg(), sm = stockMap();
+  const prods = activeProducts().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr'));
+  const items = [];
+  for (const p of prods) {
+    const qty = Math.max(0, sm[p.id] || 0);
+    if (!c.showOut && qty <= 0) continue;
+    items.push({ id: p.id, name: p.name || '', code: p.code || '', photo: await catThumb(p), qty, priceHT: +fx2(p.sellHT), priceTTC: +fx2(ttc(p.sellHT, p.tva)), tva: +p.tva || 0 });
+  }
+  return { app: 'gestion-stock-catalogue', version: 1, lang: S.lang, shop: c.shop || '', whatsapp: waDigits(c.phone), showHT: c.showHT !== false, products: items };
+}
+function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36) + ':' + s.length; }
+async function publishCatalog() {
+  const c = catCfg(), base = 'https://www.googleapis.com/drive/v3/files';
+  catErr = '';
+  try {
+    if (!c.on) {
+      // Catalogue désactivé : on retire l'accès public (le fichier reste dans Drive, le lien ne marche plus)
+      if (S.catalogId && S.catalogShared) {
+        const r = await api(`${base}/${S.catalogId}/permissions/anyoneWithLink`, { method: 'DELETE' });
+        if (r.ok || r.status === 404) { S.catalogShared = false; S.catalogHash = ''; saveS(); }
+      }
+      return;
+    }
+    const data = await buildCatalog();
+    const sig = hashStr(JSON.stringify(data));
+    let id = S.catalogId;
+    if (!id) {
+      const q = encodeURIComponent(`name='${CATALOG_NAME}' and trashed=false`);
+      const r = await api(`${base}?q=${q}&spaces=drive&orderBy=modifiedTime%20desc&fields=files(id)`);
+      if (r.ok) { const j = await r.json(); id = (j.files && j.files[0] && j.files[0].id) || null; }
+      if (id) { S.catalogId = id; S.catalogShared = false; S.catalogHash = ''; saveS(); }
+    }
+    if (id && sig === S.catalogHash && S.catalogShared) return;   // rien n'a changé
+    const body = JSON.stringify({ ...data, updatedAt: nowISO() });
+    let ok = false;
+    if (id) {
+      const r = await api(`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=media`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
+      if (r.ok) ok = true; else if (r.status !== 404) throw new Error(tr('Catalogue : erreur ') + r.status);
+    }
+    if (!ok) {
+      const bd = 'stockcat' + Date.now();
+      const mp = `--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: CATALOG_NAME, mimeType: 'application/json', description: 'Catalogue public — Gestion de stock' })}\r\n--${bd}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${bd}--`;
+      const r = await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + bd }, body: mp });
+      if (!r.ok) throw new Error(tr('Catalogue : erreur ') + r.status);
+      id = (await r.json()).id; S.catalogId = id; S.catalogShared = false;
+    }
+    if (!S.catalogShared) {
+      const r = await api(`${base}/${id}/permissions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'reader', type: 'anyone' }) });
+      if (!r.ok) throw new Error(tr('Catalogue : partage public impossible (erreur {n})', { n: r.status }));
+      S.catalogShared = true;
+    }
+    S.catalogHash = sig; S.catalogAt = nowISO(); saveS();
+  } catch (e) { if (e.auth) throw e; catErr = e.message; }
+  finally {
+    const st = $('#c_stat'); if (st) st.innerHTML = catStatusHTML();
+    // Le lien vient d'apparaître (ou de disparaître) : on réaffiche les paramètres
+    if (st && !isEditing() && !!$('#c_url') !== !!(catCfg().on && S.catalogId)) viewSettings();
+  }
+}
+function catalogURL() {
+  if (!S.catalogId) return '';
+  const u = new URL('catalogue.html', location.href.split('#')[0]);
+  u.search = ''; u.searchParams.set('f', S.catalogId);
+  if (S.apiKey) u.searchParams.set('k', S.apiKey);   // clé personnelle (hébergement ailleurs)
+  return u.href;
+}
+function catStatusHTML() {
+  const c = catCfg();
+  if (!c.on) return '<span class="dot"></span> ' + tr('Catalogue désactivé');
+  if (!S.driveOn) return '<span class="dot err"></span> ' + tr('Connectez Google Drive pour publier le catalogue');
+  if (catErr) return '<span class="dot err"></span> ' + esc(catErr);
+  if (!S.catalogId || !S.catalogShared) return '<span class="dot dirty"></span> ' + tr('Publication à la prochaine synchronisation');
+  return `<span class="dot ok"></span> ${tr('Catalogue publié')}${S.catalogAt ? ' · ' + fmtDate(S.catalogAt) : ''}${effectiveApiKey() ? '' : '<br><small class="muted">' + tr('Clé d\'API Google manquante : la page publique ne pourra pas lire le fichier (voir options avancées).') + '</small>'}`;
 }
 function updateBadge() {
   const b = $('#syncBadge'); let cls, txt;
@@ -1650,8 +1773,21 @@ function viewSettings() {
         <li>${tr('<b>Origines JavaScript autorisées</b> :')} ${origin ? `<code>${esc(origin)}</code>` : `<b>${tr('l\'adresse https:// où l\'appli est hébergée')}</b>`}</li>
         <li>${tr('Collez l\'ID client ci-dessus, puis touchez <b>Connecter Google Drive</b>.')}</li>
       </ol>
+      <label>${tr('Clé d\'API Google (catalogue public)')}<input id="s_key" value="${esc(S.apiKey || '')}" placeholder="AIza…" autocomplete="off" spellcheck="false"></label>
+      <p class="small">${tr('Seulement pour le catalogue public avec votre propre projet : <b>Identifiants → Créer → Clé API</b>, limitée à <b>Google Drive API</b> et aux sites <code>{o}/*</code>.', { o: origin ? esc(origin) : 'https://…' })}</p>
     </details>
   </section>
+  <section class="panel"><h2>🛍️ ${tr('Catalogue public (vitrine)')}</h2><div class="form">
+    <p class="muted small" style="margin:0">${tr('Un 2e fichier <code>{f}</code> est publié dans votre Drive, lisible par tous via un lien : nom, photo, code-barres, quantité disponible et prix de vente. Vos clients voient le stock et vous envoient leur demande sur WhatsApp — pas d\'achat en ligne. Les prix d\'achat et les mouvements ne sont jamais publiés.', { f: CATALOG_NAME })}</p>
+    <label class="check"><input type="checkbox" id="c_on"${catCfg().on ? ' checked' : ''}> ${tr('Publier le catalogue public')}</label>
+    <label>${tr('Nom de la boutique')}<input id="c_shop" value="${esc(catCfg().shop)}" placeholder="${tr('Ma boutique')}" autocomplete="off"></label>
+    <label>${tr('Numéro WhatsApp qui reçoit les demandes')}<input id="c_phone" type="tel" value="${esc(catCfg().phone)}" placeholder="+33 6 12 34 56 78" autocomplete="off"></label>
+    <label class="check"><input type="checkbox" id="c_out"${catCfg().showOut ? ' checked' : ''}> ${tr('Afficher aussi les produits en rupture')}</label>
+    <label class="check"><input type="checkbox" id="c_ht"${catCfg().showHT !== false ? ' checked' : ''}> ${tr('Afficher le prix HT en plus du TTC')}</label>
+    <div class="status" id="c_stat">${catStatusHTML()}</div>
+    ${catCfg().on && S.catalogId ? `<input id="c_url" readonly value="${esc(catalogURL())}" onclick="this.select()">
+    <div class="row2"><button class="btn primary" id="c_share" type="button">${tr('Partager le lien')}</button><a class="btn" href="${esc(catalogURL())}" target="_blank" rel="noopener">${tr('Ouvrir')}</a></div>` : ''}
+  </div></section>
   <section class="panel"><h2>${tr('Général')}</h2>
     <label>${tr('TVA par défaut des nouveaux produits')}${vatField('s_tva', S.tva)}</label>
   </section>
@@ -1686,6 +1822,26 @@ function viewSettings() {
     S.lang = b.dataset.l; saveS(); applyStatic(); updateBadge(); viewSettings();
   };
   $('#s_cid').addEventListener('change', e => { S.clientId = e.target.value.trim(); saveS(); });
+  $('#s_key').addEventListener('change', e => { S.apiKey = e.target.value.trim(); saveS(); viewSettings(); });
+  // Catalogue public
+  const catSync = () => { if (S.driveOn && !S.autoSync) syncNow(false); };   // sinon la synchro automatique s'en charge
+  $('#c_on').onchange = e => {
+    if (e.target.checked && !S.driveOn) toast(tr('Connectez Google Drive pour publier le catalogue'), 4000);
+    setCat({ on: e.target.checked }); viewSettings(); catSync();
+  };
+  $('#c_shop').addEventListener('change', e => { setCat({ shop: e.target.value.trim() }); catSync(); });
+  $('#c_phone').addEventListener('change', e => {
+    const v = e.target.value.trim();
+    if (v && waDigits(v).length < 8) { toast(tr('Numéro WhatsApp invalide : indiquez-le au format international (+33…)'), 4000); return; }
+    setCat({ phone: v }); catSync();
+  });
+  $('#c_out').onchange = e => { setCat({ showOut: e.target.checked }); catSync(); };
+  $('#c_ht').onchange = e => { setCat({ showHT: e.target.checked }); catSync(); };
+  if ($('#c_share')) $('#c_share').onclick = async () => {
+    const url = catalogURL(), title = catCfg().shop || tr('Catalogue');
+    try { if (navigator.share) { await navigator.share({ title, url }); return; } } catch (e) { if (e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(url); toast(tr('Lien copié')); } catch { $('#c_url').select(); }
+  };
   $('#s_conn').onclick = async () => {
     S.clientId = $('#s_cid').value.trim(); saveS();
     if (!effectiveClientId()) { toast(tr('Connexion intégrée pas encore disponible : collez un Client ID dans les options avancées'), 4500); return; }
@@ -1698,7 +1854,7 @@ function viewSettings() {
   if ($('#s_disc')) $('#s_disc').onclick = () => {
     if (!confirm(tr('Déconnecter Google Drive ?\nLes données restent sur cet appareil et dans Drive.'))) return;
     try { if (accessToken && window.google && google.accounts) google.accounts.oauth2.revoke(accessToken, () => {}); } catch {}
-    accessToken = null; tokenExp = 0; localStorage.removeItem(TKEY); S.driveOn = false; S.fileId = null; S.email = ''; saveS(); updateBadge(); viewSettings(); toast(tr('Déconnecté'));
+    accessToken = null; tokenExp = 0; localStorage.removeItem(TKEY); S.driveOn = false; S.fileId = null; S.email = ''; S.catalogId = null; S.catalogShared = false; S.catalogHash = ''; saveS(); updateBadge(); viewSettings(); toast(tr('Déconnecté'));
   };
   bindVatField('s_tva', r => { S.tva = r; saveS(); });
   $('#s_csv1').onclick = exportStockCSV;
@@ -1707,7 +1863,7 @@ function viewSettings() {
   $('#s_tot1').onclick = showStockTotals;
   $('#s_tot2').onclick = showMoveTotals;
   $('#s_compta').onclick = () => { movePeriod = 'today'; showMoveTotals(); };
-  $('#s_exp').onclick = () => download(`${tr('stock-sauvegarde')}-${today()}.json`, JSON.stringify({ app: 'gestion-stock', version: 1, savedAt: nowISO(), products: DB.products, movements: DB.movements }), 'application/json');
+  $('#s_exp').onclick = () => download(`${tr('stock-sauvegarde')}-${today()}.json`, JSON.stringify({ app: 'gestion-stock', version: 1, savedAt: nowISO(), products: DB.products, movements: DB.movements, config: DB.config || {} }), 'application/json');
   $('#s_imp').onclick = () => $('#s_impIn').click();
   $('#s_impIn').onchange = async e => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -1732,14 +1888,14 @@ function viewSettings() {
   $('#s_reset').onclick = async () => {
     if (!confirm(tr('Effacer tous les produits et mouvements de cet appareil ?'))) return;
     if (!S.driveOn && !confirm(tr('Drive n\'est pas connecté : les données seront définitivement perdues. Continuer ?'))) return;
-    DB = { products: {}, movements: {} }; S.dirty = false; saveS(); await persist(); updateBadge(); toast(tr('Données locales effacées'));
+    DB = { products: {}, movements: {}, config: {} }; S.dirty = false; saveS(); await persist(); updateBadge(); toast(tr('Données locales effacées'));
   };
 }
 
 /* ====== Démarrage ====== */
 async function init() {
   const t = safeJSON(localStorage.getItem(TKEY)); if (t.t && t.e > Date.now()) { accessToken = t.t; tokenExp = t.e; }
-  try { await idb.open(); const d = await idb.get('db'); if (d && d.products) DB = { products: d.products || {}, movements: d.movements || {} }; }
+  try { await idb.open(); const d = await idb.get('db'); if (d && d.products) DB = { products: d.products || {}, movements: d.movements || {}, config: d.config || {} }; }
   catch (e) { toast(tr('Stockage local indisponible : ') + e.message, 5000); }
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   applyStatic();
