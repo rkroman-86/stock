@@ -30,7 +30,7 @@ const DRIVE_HOSTS = ['https://www.googleapis.com', 'https://content.googleapis.c
 async function driveGet(f, k) {
   let err;
   for (const h of DRIVE_HOSTS) {
-    try { return await fetch(`${h}/drive/v3/files/${f}?alt=media&key=${encodeURIComponent(k)}`, { cache: 'no-store', credentials: 'omit' }); }
+    try { return await fetch(`${h}/drive/v3/files/${f}?alt=media&key=${encodeURIComponent(k)}`, { cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer-when-downgrade' }); }
     catch (e) { err = e; }
   }
   throw err;
