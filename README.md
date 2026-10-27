@@ -42,7 +42,7 @@ toutes les 5 min quand l'appli est ouverte, et en arrière-plan via *Periodic Ba
 fréquence décidée par le système). Les cartes modifiées portent un badge Nouveau / Réassort / Baisse.
 
 Pour l'éditeur : la page publique lit le fichier avec une **clé d'API** (`BUILTIN_API_KEY`, dans `index.html` **et** `catalogue/index.html`).
-Google Cloud Console → Identifiants → Créer → Clé API ; restrictions : API = *Google Drive API*, sites = `https://rkroman-86.github.io/*`.
+Google Cloud Console → Identifiants → Créer → Clé API ; restriction d'API = *Google Drive API* uniquement ; restriction d'application = **Aucune** (la restriction « Sites Web » bloque le téléchargement du fichier, constaté le 27/10/2026). La clé ne permet de lire que des fichiers déjà publics.
 
 ## APK Android
 
