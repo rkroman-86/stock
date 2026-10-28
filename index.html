@@ -12,6 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
@@ -84,6 +85,9 @@ main{max-width:1100px;margin:0 auto;padding:14px 16px calc(96px + env(safe-area-
 .stockbig{display:flex;align-items:baseline;justify-content:space-between;border-radius:12px;padding:12px 16px;margin-bottom:12px}
 .stockbig b{font-size:34px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.row3 .btn{padding:10px 6px;font-size:14px}
+.qr-box{text-align:center;background:var(--surface2);border-radius:12px;padding:12px}
+.qr-box img{width:min(240px,70%);aspect-ratio:1/1.32;object-fit:contain;border-radius:8px;background:#fff;display:block;margin:0 auto}
 .photo-wrap{margin-bottom:14px}
 .photo{width:100%;aspect-ratio:4/3;max-height:340px;background:var(--surface2);border-radius:12px;overflow:hidden;display:grid;place-items:center}
 .photo img{width:100%;height:100%;object-fit:contain}
@@ -223,7 +227,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <script>
 'use strict';
 /* ====== Constantes ====== */
-const APP_VERSION = '19';
+const APP_VERSION = '20';
 const FILE_NAME = 'gestion-stock-donnees.json';
 const CATALOG_NAME = 'gestion-stock-catalogue.json';   // 2e fichier : vitrine publique (lecture seule, sans prix d'achat ni mouvements)
 // Clé d'API Google (restreinte à « Google Drive API » et au site https://rkroman-86.github.io/*) :
@@ -595,6 +599,13 @@ const EN = {
 "Sortie rapide (vente)": "Quick sale",
 "N° de commande, client, facture…": "Order no., customer, invoice…",
 "ou saisir le code…": "or type the code…",
+"Partager": "Share",
+"Copier le lien": "Copy link",
+"QR code à afficher en boutique ou sur une carte de visite : vos clients le scannent pour ouvrir le catalogue et l'installer.": "QR code to display in your shop or on a business card: customers scan it to open the catalogue and install it.",
+"Partager / enregistrer le QR code (pour l'imprimer)": "Share / save the QR code (to print it)",
+"Scannez pour voir notre stock": "Scan to see our stock",
+"et commander sur WhatsApp": "and order on WhatsApp",
+"catalogue": "catalogue",
 "Catalogue : erreur ": "Catalogue: error ",
 "Catalogue : partage public impossible (erreur {n})": "Catalogue: public sharing failed (error {n})",
 "Catalogue désactivé": "Catalogue disabled",
@@ -1140,7 +1151,7 @@ function onUserGesture(e) {
   const t = e.target;
   if (t.closest('#syncBadge, #s_conn, #s_sync')) return;           // ces boutons gèrent déjà la connexion
   // Boutons qui ouvrent le sélecteur de fichiers, la caméra, le partage ou l'impression : ne pas leur voler le geste
-  if (t.closest('#s_imp, #s_csv1, #s_csv2, #s_exp, #takePhoto, #pickPhoto, #rmPhoto, #btnScan, #scanCode, #shareLbl, #dlLbl, #print, #infoCsv, [type=file]')) return;
+  if (t.closest('#c_share, #c_copy, #c_qrShare, #s_imp, #s_csv1, #s_csv2, #s_exp, #takePhoto, #pickPhoto, #rmPhoto, #btnScan, #scanCode, #shareLbl, #dlLbl, #print, #infoCsv, [type=file]')) return;
   if (t.closest('input, select, textarea, label')) return;         // ne pas interrompre une saisie
   if (t.closest('dialog') && !t.closest('#mvOk')) return;          // dans la fenêtre Entrée/Sortie : seulement sur « Valider »
   getToken(true).then(() => { syncState = 'idle'; syncErr = ''; updateBadge(); if (!syncing) syncNow(false); })
@@ -1309,6 +1320,24 @@ function catalogURL() {
   u.search = ''; u.searchParams.set('f', S.catalogId);
   if (S.apiKey) u.searchParams.set('k', S.apiKey);   // clé personnelle (hébergement ailleurs)
   return u.href;
+}
+// Affiche « nom de la boutique / QR code / Scannez… » sur une image blanche, prête à imprimer
+function catalogQR() {
+  const url = catalogURL(); if (!url || typeof qrcode === 'undefined') return null;
+  const q = qrcode(0, 'M'); q.addData(url); q.make();
+  const n = q.getModuleCount(), W = 1000, quiet = 4, cell = Math.floor(W / (n + quiet * 2)), qs = cell * (n + quiet * 2), off = Math.round((W - qs) / 2);
+  const top = 150, H = top + qs + 170;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);
+  x.fillStyle = '#000';
+  for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (q.isDark(r, k)) x.fillRect(off + (k + quiet) * cell, top + (r + quiet) * cell, cell, cell);
+  x.textAlign = 'center'; x.textBaseline = 'alphabetic'; x.fillStyle = '#111';
+  drawFitText(x, catCfg().shop || tr('Catalogue'), W / 2, 35, W - 80, 90, 1, 800);
+  x.fillStyle = '#ea580c';
+  drawFitText(x, tr('Scannez pour voir notre stock'), W / 2, top + qs + 20, W - 80, 60, 1, 700);
+  x.fillStyle = '#555';
+  drawFitText(x, tr('et commander sur WhatsApp'), W / 2, top + qs + 95, W - 80, 44, 1, 500);
+  return c;
 }
 function catStatusHTML() {
   const c = catCfg();
@@ -1786,7 +1815,9 @@ function viewSettings() {
     <label class="check"><input type="checkbox" id="c_ht"${catCfg().showHT !== false ? ' checked' : ''}> ${tr('Afficher le prix HT en plus du TTC')}</label>
     <div class="status" id="c_stat">${catStatusHTML()}</div>
     ${catCfg().on && S.catalogId ? `<input id="c_url" readonly value="${esc(catalogURL())}" onclick="this.select()">
-    <div class="row2"><button class="btn primary" id="c_share" type="button">${tr('Partager le lien')}</button><a class="btn" href="${esc(catalogURL())}" target="_blank" rel="noopener">${tr('Ouvrir')}</a></div>` : ''}
+    <div class="row3"><button class="btn primary" id="c_share" type="button">${tr('Partager')}</button><button class="btn" id="c_copy" type="button">${tr('Copier le lien')}</button><a class="btn" href="${esc(catalogURL())}" target="_blank" rel="noopener">${tr('Ouvrir')}</a></div>
+    <div class="qr-box"><img id="c_qr" alt="QR code"><p class="muted small" style="margin:6px 0 0">${tr('QR code à afficher en boutique ou sur une carte de visite : vos clients le scannent pour ouvrir le catalogue et l\'installer.')}</p></div>
+    <button class="btn block" id="c_qrShare" type="button">🖼️ ${tr('Partager / enregistrer le QR code (pour l\'imprimer)')}</button>` : ''}
   </div></section>
   <section class="panel"><h2>${tr('Général')}</h2>
     <label>${tr('TVA par défaut des nouveaux produits')}${vatField('s_tva', S.tva)}</label>
@@ -1837,6 +1868,19 @@ function viewSettings() {
   });
   $('#c_out').onchange = e => { setCat({ showOut: e.target.checked }); catSync(); };
   $('#c_ht').onchange = e => { setCat({ showHT: e.target.checked }); catSync(); };
+  if ($('#c_qr')) { const qc = catalogQR(); if (qc) $('#c_qr').src = qc.toDataURL('image/png'); else $('#c_qr').closest('.qr-box').hidden = true; }
+  if ($('#c_copy')) $('#c_copy').onclick = async () => {
+    try { await navigator.clipboard.writeText(catalogURL()); toast(tr('Lien copié')); }
+    catch { const i = $('#c_url'); i.focus(); i.select(); try { document.execCommand('copy'); toast(tr('Lien copié')); } catch {} }
+  };
+  if ($('#c_qrShare')) $('#c_qrShare').onclick = async () => {
+    const qc = catalogQR(); if (!qc) return;
+    const blob = await new Promise(r => qc.toBlob(r, 'image/png'));
+    const name = (catCfg().shop || tr('catalogue')).replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') + '-qr.png';
+    const file = new File([blob], name, { type: 'image/png' });
+    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: catCfg().shop || tr('Catalogue') }); return; } } catch (e) { if (e.name === 'AbortError') return; }
+    download(name, blob, 'image/png');
+  };
   if ($('#c_share')) $('#c_share').onclick = async () => {
     const url = catalogURL(), title = catCfg().shop || tr('Catalogue');
     try { if (navigator.share) { await navigator.share({ title, url }); return; } } catch (e) { if (e.name === 'AbortError') return; }

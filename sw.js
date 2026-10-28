@@ -1,6 +1,6 @@
 // Service worker : rend l'appli installable et utilisable hors ligne.
 // Changer VERSION à chaque mise à jour importante pour forcer le rafraîchissement du cache.
-const VERSION = 'stock-v21';
+const VERSION = 'stock-v22';
 const SHELL = [
   './',
   './index.html',
@@ -11,7 +11,8 @@ const SHELL = [
 ];
 const LIBS = [
   'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js',
-  'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'
+  'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js',
+  'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js'
 ];
 
 self.addEventListener('install', e => {
