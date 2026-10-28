@@ -119,6 +119,14 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-
 .dot.ok{background:var(--in)}.dot.dirty{background:var(--warn)}.dot.err{background:var(--danger)}
 .stack{display:flex;flex-direction:column;gap:10px}
 details{margin-top:12px;font-size:14px}details summary{cursor:pointer;font-weight:600}
+details.fold{margin-top:0;font-size:inherit;padding:0}
+details.fold>summary{list-style:none;display:flex;align-items:center;gap:8px;padding:16px;font-size:16px;font-weight:700;user-select:none}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::after{content:'';margin-left:auto;width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .15s;margin-top:-4px}
+details.fold[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+details.fold>.fold-in{padding:0 16px 16px}
+h3.sub{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:4px 0 10px}
+h3.sub~h3.sub{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
 details ol{padding-left:20px}details li{margin:6px 0}
 code{background:var(--surface2);padding:1px 5px;border-radius:5px;font-size:13px;word-break:break-all}
 
@@ -227,7 +235,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <script>
 'use strict';
 /* ====== Constantes ====== */
-const APP_VERSION = '20';
+const APP_VERSION = '21';
 const FILE_NAME = 'gestion-stock-donnees.json';
 const CATALOG_NAME = 'gestion-stock-catalogue.json';   // 2e fichier : vitrine publique (lecture seule, sans prix d'achat ni mouvements)
 // Clé d'API Google (restreinte à « Google Drive API » et au site https://rkroman-86.github.io/*) :
@@ -599,6 +607,8 @@ const EN = {
 "Sortie rapide (vente)": "Quick sale",
 "N° de commande, client, facture…": "Order no., customer, invoice…",
 "ou saisir le code…": "or type the code…",
+"Compta": "Accounting",
+"Application client (catalogue)": "Customer app (catalogue)",
 "Partager": "Share",
 "Copier le lien": "Copy link",
 "QR code à afficher en boutique ou sur une carte de visite : vos clients le scannent pour ouvrir le catalogue et l'installer.": "QR code to display in your shop or on a business card: customers scan it to open the catalogue and install it.",
@@ -1776,22 +1786,49 @@ function bindLabelSettings() {
   $('#l_price').onchange = e => { cfg.price = e.target.checked; save(); };
   $('#l_rot').onchange = e => { cfg.rotate = e.target.checked; save(); };
 }
+// Menus déroulants des paramètres : on mémorise l'état (ouvert / fermé) de chacun
+const foldOpen = k => (S.fold || {})[k] ? ' open' : '';
 function viewSettings() {
   setTitle(tr('Paramètres'));
   const origin = location.origin && location.origin !== 'null' ? location.origin : null;
   view.innerHTML = `
   <a class="back" href="#/">← ${tr('Liste')}</a>
-  <section class="panel"><h2>${tr('Langue / Language')}</h2>
+  <details class="panel fold" data-k="lang"${foldOpen('lang')}><summary>🌐 ${tr('Langue / Language')}</summary><div class="fold-in">
     <div class="seg" id="s_lang"><button type="button" data-l="fr" class="${isEN() ? '' : 'on'}">🇫🇷 Français</button><button type="button" data-l="en" class="${isEN() ? 'on' : ''}">🇬🇧 English</button></div>
-  </section>
-  <section class="panel"><h2>Google Drive</h2>
+  </div></details>
+  <details class="panel fold" data-k="gen"${foldOpen('gen')}><summary>⚙️ ${tr('Général')}</summary><div class="fold-in">
+    <h3 class="sub">${tr('TVA')}</h3>
+    <label>${tr('TVA par défaut des nouveaux produits')}${vatField('s_tva', S.tva)}</label>
+  
+    <h3 class="sub">${tr('Étiquettes')}</h3><div class="form">
+    <label>${tr('Format des étiquettes')}<select id="l_preset">${LABEL_PRESETS.map(([k, l]) => `<option value="${k}">${tr(l)}</option>`).join('')}</select></label>
+    <div class="pair"><label>${tr('Largeur (mm)')}<input id="l_w" inputmode="decimal"></label><label>${tr('Hauteur (mm)')}<input id="l_h" inputmode="decimal"></label></div>
+    <label class="check"><input type="checkbox" id="l_name"> ${tr('Afficher le nom du produit')}</label>
+    <label class="check"><input type="checkbox" id="l_price"> ${tr('Afficher le prix de vente TTC')}</label>
+    <label class="check"><input type="checkbox" id="l_rot"> ${tr('Pivoter de 90° (si l\'appli de l\'imprimante l\'imprime de travers)')}</label>
+    <div class="bc-box lbl"><img id="l_prev" alt="${tr('Aperçu')}"></div>
+  </div></div></details>
+  <details class="panel fold" data-k="compta"${foldOpen('compta')}><summary>💶 ${tr('Compta')}</summary><div class="fold-in"><div class="stack">
+    <button class="btn primary block" id="s_tot1" type="button">📦 ${tr('Totaux du stock (valeur d\'achat et vénale)')}</button>
+    <button class="btn primary block" id="s_tot2" type="button">💶 ${tr('Totaux des mouvements (ventes et gains)')}</button>
+    <button class="btn primary block" id="s_compta" type="button">📒 ${tr('Récapitulatif comptable du jour…')}</button>
+  </div></div></details>
+  <details class="panel fold" data-k="exp"${foldOpen('exp')}><summary>💾 ${tr('Exports & sauvegarde')}</summary><div class="fold-in"><div class="stack">
+    <button class="btn block" id="s_csv1" type="button">📄 ${tr('État du stock (CSV / Excel)')}</button>
+    <button class="btn block" id="s_csv2" type="button">📄 ${tr('Journal des mouvements (CSV / Excel)')}</button>
+    <button class="btn block" id="s_exp" type="button">💾 ${tr('Sauvegarde complète (JSON)')}</button>
+    <button class="btn block" id="s_imp" type="button">📥 ${tr('Importer (sauvegarde JSON ou liste de stock CSV)')}</button>
+    <input type="file" id="s_impIn" hidden>
+    <p class="muted small" style="margin:0">${tr('CSV : une ligne par produit avec des colonnes comme <i>Code, Nom, Stock, TVA, Achat HT, Vente TTC, Seuil alerte</i> (l\'export « État du stock » convient). Depuis Excel : <b>Enregistrer sous → CSV</b>. Les produits existants (même code) sont mis à jour et leur stock est ajusté par un mouvement « Inventaire ».')}</p>
+  </div></div></details>
+  <details class="panel fold" data-k="drive"${foldOpen('drive')}><summary>☁️ Google Drive</summary><div class="fold-in">
     <p class="muted small" style="margin-top:0">${tr('Vos données sont enregistrées sur cet appareil et sauvegardées dans <b>votre</b> Google Drive (fichier <code>{f}</code>). Connectez le même compte Google sur plusieurs téléphones ou ordinateurs pour partager le même stock.', { f: FILE_NAME })}</p>
     <div class="status" id="s_stat">${driveStatusHTML()}</div>
     <div class="row2"><button class="btn primary" id="s_conn" type="button">${S.driveOn ? tr('Reconnecter') : tr('Connecter Drive')}</button><button class="btn" id="s_sync" type="button">${tr('Synchroniser')}</button></div>
     <label class="check" style="margin-top:12px"><input type="checkbox" id="s_auto"${S.autoSync ? ' checked' : ''}> ${tr('Synchroniser automatiquement après chaque modification')}</label>
     ${S.driveOn ? `<button class="btn ghost block" id="s_disc" type="button" style="margin-top:8px">${tr('Déconnecter Google Drive')}</button>` : ''}
     <p class="muted small">${tr('L\'appli n\'accède qu\'au fichier qu\'elle a créé dans votre Drive (autorisation « drive.file ») : ni vos autres fichiers, ni l\'éditeur de l\'appli ne peuvent lire vos données.')} <a href="confidentialite.html" target="_blank" rel="noopener">${tr('Politique de confidentialité')}</a></p>
-    <details${!BUILTIN_CLIENT_ID && !S.clientId ? ' open' : ''}><summary>${tr('Options avancées : utiliser votre propre Client ID')}</summary>
+    <details data-k="adv"${!BUILTIN_CLIENT_ID && !S.clientId ? ' open' : foldOpen('adv')}><summary>${tr('Options avancées : utiliser votre propre Client ID')}</summary>
       <p class="small">${BUILTIN_CLIENT_ID ? tr('Facultatif. Laissez vide pour utiliser la connexion intégrée.') : tr('La connexion intégrée n\'est pas encore configurée : vous pouvez utiliser votre propre Client ID Google.')}</p>
       <label>${tr('Client ID OAuth Google')}<input id="s_cid" value="${esc(S.clientId)}" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false"></label>
       <ol>
@@ -1805,8 +1842,8 @@ function viewSettings() {
       <label>${tr('Clé d\'API Google (catalogue public)')}<input id="s_key" value="${esc(S.apiKey || '')}" placeholder="AIza…" autocomplete="off" spellcheck="false"></label>
       <p class="small">${tr('Seulement pour le catalogue public avec votre propre projet : <b>Identifiants → Créer → Clé API</b>, limitée à <b>Google Drive API</b> et aux sites <code>{o}/*</code>.', { o: origin ? esc(origin) : 'https://…' })}</p>
     </details>
-  </section>
-  <section class="panel"><h2>🛍️ ${tr('Catalogue public (vitrine)')}</h2><div class="form">
+  </div></details>
+  <details class="panel fold" data-k="client"${foldOpen('client')}><summary>🛍️ ${tr('Application client (catalogue)')}</summary><div class="fold-in"><div class="form">
     <p class="muted small" style="margin:0">${tr('Un 2e fichier <code>{f}</code> est publié dans votre Drive, lisible par tous via un lien : nom, photo, code-barres, quantité disponible et prix de vente. Vos clients voient le stock et vous envoient leur demande sur WhatsApp — pas d\'achat en ligne. Les prix d\'achat et les mouvements ne sont jamais publiés.', { f: CATALOG_NAME })}</p>
     <label class="check"><input type="checkbox" id="c_on"${catCfg().on ? ' checked' : ''}> ${tr('Publier le catalogue public')}</label>
     <label>${tr('Nom de la boutique')}<input id="c_shop" value="${esc(catCfg().shop)}" placeholder="${tr('Ma boutique')}" autocomplete="off"></label>
@@ -1818,36 +1855,13 @@ function viewSettings() {
     <div class="row3"><button class="btn primary" id="c_share" type="button">${tr('Partager')}</button><button class="btn" id="c_copy" type="button">${tr('Copier le lien')}</button><a class="btn" href="${esc(catalogURL())}" target="_blank" rel="noopener">${tr('Ouvrir')}</a></div>
     <div class="qr-box"><img id="c_qr" alt="QR code"><p class="muted small" style="margin:6px 0 0">${tr('QR code à afficher en boutique ou sur une carte de visite : vos clients le scannent pour ouvrir le catalogue et l\'installer.')}</p></div>
     <button class="btn block" id="c_qrShare" type="button">🖼️ ${tr('Partager / enregistrer le QR code (pour l\'imprimer)')}</button>` : ''}
-  </div></section>
-  <section class="panel"><h2>${tr('Général')}</h2>
-    <label>${tr('TVA par défaut des nouveaux produits')}${vatField('s_tva', S.tva)}</label>
-  </section>
-  <section class="panel"><h2>${tr('Étiquettes')}</h2><div class="form">
-    <label>${tr('Format des étiquettes')}<select id="l_preset">${LABEL_PRESETS.map(([k, l]) => `<option value="${k}">${tr(l)}</option>`).join('')}</select></label>
-    <div class="pair"><label>${tr('Largeur (mm)')}<input id="l_w" inputmode="decimal"></label><label>${tr('Hauteur (mm)')}<input id="l_h" inputmode="decimal"></label></div>
-    <label class="check"><input type="checkbox" id="l_name"> ${tr('Afficher le nom du produit')}</label>
-    <label class="check"><input type="checkbox" id="l_price"> ${tr('Afficher le prix de vente TTC')}</label>
-    <label class="check"><input type="checkbox" id="l_rot"> ${tr('Pivoter de 90° (si l\'appli de l\'imprimante l\'imprime de travers)')}</label>
-    <div class="bc-box lbl"><img id="l_prev" alt="${tr('Aperçu')}"></div>
-  </div></section>
-  <section class="panel"><h2>${tr('Totaux')}</h2><div class="stack">
-    <button class="btn primary block" id="s_tot1" type="button">📦 ${tr('Totaux du stock (valeur d\'achat et vénale)')}</button>
-    <button class="btn primary block" id="s_tot2" type="button">💶 ${tr('Totaux des mouvements (ventes et gains)')}</button>
-  </div></section>
-  <section class="panel"><h2>${tr('Exports & sauvegarde')}</h2><div class="stack">
-    <button class="btn block" id="s_csv1" type="button">📄 ${tr('État du stock (CSV / Excel)')}</button>
-    <button class="btn primary block" id="s_compta" type="button">📒 ${tr('Récapitulatif comptable du jour…')}</button>
-    <button class="btn block" id="s_csv2" type="button">📄 ${tr('Journal des mouvements (CSV / Excel)')}</button>
-    <button class="btn block" id="s_exp" type="button">💾 ${tr('Sauvegarde complète (JSON)')}</button>
-    <button class="btn block" id="s_imp" type="button">📥 ${tr('Importer (sauvegarde JSON ou liste de stock CSV)')}</button>
-    <input type="file" id="s_impIn" hidden>
-    <p class="muted small" style="margin:0">${tr('CSV : une ligne par produit avec des colonnes comme <i>Code, Nom, Stock, TVA, Achat HT, Vente TTC, Seuil alerte</i> (l\'export « État du stock » convient). Depuis Excel : <b>Enregistrer sous → CSV</b>. Les produits existants (même code) sont mis à jour et leur stock est ajusté par un mouvement « Inventaire ».')}</p>
-  </div></section>
-  <section class="panel"><h2>${tr('Cet appareil')}</h2>
+  </div></div></details>
+  <details class="panel fold" data-k="dev"${foldOpen('dev')}><summary>📱 ${tr('Cet appareil')}</summary><div class="fold-in">
     <p class="muted small" style="margin-top:0">${tr('Efface les données locales. Si Drive est connecté, elles reviendront à la prochaine synchronisation.')}</p>
     <button class="btn danger block" id="s_reset" type="button">${tr('Effacer les données de cet appareil')}</button>
-  </section>
+  </div></details>
   <p class="muted small" style="text-align:center">Version ${APP_VERSION} · <a href="#" id="s_upd">${tr('Rechercher une mise à jour')}</a></p>`;
+  $$('details[data-k]').forEach(d => d.addEventListener('toggle', () => { S.fold = { ...(S.fold || {}), [d.dataset.k]: d.open }; saveS(); }));
   $('#s_lang').onclick = e => {
     const b = e.target.closest('[data-l]'); if (!b || b.dataset.l === S.lang) return;
     S.lang = b.dataset.l; saveS(); applyStatic(); updateBadge(); viewSettings();
