@@ -250,7 +250,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <script>
 'use strict';
 /* ====== Constantes ====== */
-const APP_VERSION = '24';
+const APP_VERSION = '25';
 const FILE_NAME = 'gestion-stock-donnees.json';
 const CATALOG_NAME = 'gestion-stock-catalogue.json';   // 2e fichier : vitrine publique (lecture seule, sans prix d'achat ni mouvements)
 // Clé d'API Google (restreinte à « Google Drive API » et au site https://rkroman-86.github.io/*) :
@@ -785,13 +785,16 @@ const locStockOf = (pid, date) => locStockAll(date)[pid] || {};
 // [[lieu, qté], …] sans les lieux à zéro, triés par nom, « Sans lieu » en dernier
 const locSplit = byLoc => Object.entries(byLoc || {}).filter(([, q]) => Math.abs(q) > 1e-9)
   .sort((a, b) => (a[0] === '') - (b[0] === '') || locName(a[0]).localeCompare(locName(b[0]), 'fr'));
-function locOptions(sel, withEmpty = true) {
-  const ls = activeLocs();
-  let h = withEmpty ? `<option value=""${!sel ? ' selected' : ''}>${tr('— Sans lieu —')}</option>` : '';
-  h += ls.map(l => `<option value="${l.id}"${l.id === sel ? ' selected' : ''}>${esc(l.name)}</option>`).join('');
-  if (sel && !ls.some(l => l.id === sel)) h += `<option value="${sel}" selected>${esc(locName(sel))}</option>`;
+// Options d'une liste de lieux ; qty = { lieu: quantité } affiche « Dépôt (6) »
+function locOptions(sel, withEmpty = true, qty = null) {
+  const ls = activeLocs(), n = id => qty ? ` (${fmtNum(qty[id] || 0)})` : '';
+  let h = withEmpty ? `<option value=""${!sel ? ' selected' : ''}>${tr('— Sans lieu —')}${n('')}</option>` : '';
+  h += ls.map(l => `<option value="${l.id}"${l.id === sel ? ' selected' : ''}>${esc(l.name)}${n(l.id)}</option>`).join('');
+  if (sel && !ls.some(l => l.id === sel)) h += `<option value="${sel}" selected>${esc(locName(sel))}${n(sel)}</option>`;
   return h;
 }
+// Unités en stock par lieu, tous produits confondus
+function locUnits() { const r = {}; for (const o of Object.values(locStockAll())) for (const [l, q] of Object.entries(o)) r[l] = (r[l] || 0) + q; return r; }
 const findLocByName = n => activeLocs().find(l => l.name.trim().toLowerCase() === String(n).trim().toLowerCase());
 function findOrCreateLoc(name) {   // n'appelle pas touch() : à faire par l'appelant
   const n = String(name || '').trim(); if (!n) return '';
@@ -815,9 +818,9 @@ function openTransfer(pid, opts = {}) {
   $('#infoTitle').textContent = tr('Transfert entre lieux');
   $('#infoBody').innerHTML = `
     <p class="muted small" style="margin:0">${esc(p.name)} · ${tr('stock total :')} ${fmtNum(stockOf(pid))}</p>
-    <label>${tr('De')}<select id="x_from">${locOptions(from)}</select></label>
+    <label>${tr('De')}<select id="x_from">${locOptions(from, true, split)}</select></label>
     <p class="muted small" id="x_avail" style="margin:-6px 0 0"></p>
-    <label>${tr('Vers')}<select id="x_to">${locOptions(to)}</select></label>
+    <label>${tr('Vers')}<select id="x_to">${locOptions(to, true, split)}</select></label>
     <label>${tr('Quantité')}<span class="qty"><button type="button" class="btn" data-xq="-1">−</button><input id="x_qty" inputmode="decimal" value="1" autocomplete="off"><button type="button" class="btn" data-xq="1">+</button></span></label>
     <label>Date<input type="datetime-local" id="x_date" value="${localDT()}"></label>
     <label>${tr('Référence / note')}<input id="x_note" value="${esc(opts.note || '')}" placeholder="${tr('Bon de livraison, chantier, motif…')}" autocomplete="off"></label>
@@ -967,7 +970,7 @@ function viewList() {
       <div><b>${eur(val)}</b><span>${tr('valeur HT (achat)')}</span></div>
     </div>
     <div class="search"><input id="q" type="search" placeholder="${tr('Rechercher un nom ou un code…')}" value="${esc(listState.q)}" autocomplete="off"></div>
-    ${hasLocs() ? `<select id="locf" class="locfilter" aria-label="${tr('Lieu')}"><option value="*">📍 ${tr('Tous les lieux')}</option>${locOptions(listState.loc === '*' ? '' : listState.loc)}</select>` : ''}
+    ${hasLocs() ? `<select id="locf" class="locfilter" aria-label="${tr('Lieu')}"><option value="*">📍 ${tr('Tous les lieux')}</option>${locOptions(listState.loc === '*' ? '' : listState.loc, true, locUnits())}</select>` : ''}
     <div class="chips">${[['all', tr('Tous')], ['low', tr('Stock bas') + (low ? ' · ' + low : '')], ['zero', tr('Rupture')]].map(([k, l]) => `<button class="chip${listState.filter === k ? ' on' : ''}" data-f="${k}">${l}</button>`).join('')}</div>
     <div id="grid" class="grid"></div>`;
   $('#q').addEventListener('input', e => { listState.q = e.target.value; renderGrid(); });
@@ -1024,7 +1027,7 @@ function productForm(p, isNew) {
     <div class="pair"><label>${tr('Prix de vente HT')}<input id="f_sellHT" inputmode="decimal" value="${fx2(p.sellHT)}"></label><label>${tr('Prix de vente TTC')}<input id="f_sellTTC" inputmode="decimal" value="${fx2(ttc(p.sellHT, p.tva))}"></label></div>
     <div class="margin" id="margin"></div>
     <label>${tr('Seuil d\'alerte (stock bas)')}<input id="f_min" inputmode="decimal" value="${fmtNum(p.minStock || 0)}"></label>
-    ${activeLocs().length ? `<label>${tr('Lieu par défaut')}<select id="f_loc">${locOptions(defLoc(p))}</select></label>` : ''}
+    ${activeLocs().length ? `<label>${tr('Lieu par défaut')}<select id="f_loc">${locOptions(defLoc(p), true, locStockOf(p.id))}</select></label>` : ''}
     ${isNew ? `<label>${tr('Quantité initiale en stock')}<input id="f_init" inputmode="decimal" value="0"></label>` : ''}
     <label>${tr('Note')}<textarea id="f_note" rows="2">${esc(p.note || '')}</textarea></label>
   </div>`;
@@ -1184,7 +1187,7 @@ function openMove(pid, dir, opts = {}) {
   // Lieu : proposé dès qu'au moins un lieu existe (sinon mouvement « sans lieu » comme avant)
   const locsOn = activeLocs().length > 0 || hasLocs();
   $('#m_locWrap').hidden = !locsOn;
-  $('#m_loc').innerHTML = locsOn ? locOptions(mv.locSet ? opts.loc : proposedLoc(p, dir, mv.type)) : '';
+  $('#m_loc').innerHTML = locsOn ? locOptions(mv.locSet ? opts.loc : proposedLoc(p, dir, mv.type), true, locStockOf(p.id)) : '';
   mv.u = defaultPrice(p, dir, mv.type);
   const dlg = $('#mvDlg');
   dlg.className = dir;
@@ -1280,7 +1283,7 @@ function renderScanMode() {
   $('#scanRoute').hidden = mode !== 'xfer';
   if (mode === 'xfer') {
     const r = xferRoute();
-    $('#scanFrom').innerHTML = locOptions(r.from); $('#scanTo').innerHTML = locOptions(r.to);
+    const u = locUnits(); $('#scanFrom').innerHTML = locOptions(r.from, true, u); $('#scanTo').innerHTML = locOptions(r.to, true, u);
     $('#scanInfo').textContent = r.from === r.to ? tr('⚠️ Choisissez deux lieux différents')
       : tr('Scan → transfert prêt → Valider → scan suivant · transférés aujourd\'hui : {n} article(s)', { n: fmtNum(todayXfers()) });
   } else $('#scanInfo').textContent = mode === 'quick' ? tr('Scan → fenêtre de vente prête → Valider → scan suivant · ventes du jour : {n} article(s)', { n: fmtNum(todaySales()) }) : tr('Scan → ouverture de la fiche produit');
