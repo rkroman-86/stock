@@ -54,3 +54,9 @@ Le dossier `android/` contient une **Trusted Web Activity** : une petite appli A
 - Signature : `android/release.p12` (chiffré) ; mot de passe dans le secret GitHub `KEYSTORE_PASSWORD`.
 - Plein écran sans barre d'adresse : le fichier `android/assetlinks.json` doit être publié à
   `https://rkroman-86.github.io/.well-known/assetlinks.json` (dépôt `rkroman-86.github.io`).
+
+## Lieux de stockage
+
+Paramètres → **Lieux de stockage** : créer des lieux (dépôt, magasin, chantier…), les renommer, en choisir un comme **lieu de vente par défaut** (★).
+Chaque mouvement peut porter un lieu ; un **transfert** déplace du stock d'un lieu à l'autre (2 mouvements liés, stock total inchangé, exclus des totaux d'entrées/sorties et de la compta).
+Sans lieu créé, rien ne change : le stock existant reste « Sans lieu ». Les exports ajoutent une colonne *Lieu* et l'import CSV la comprend (une ligne par produit et par lieu).

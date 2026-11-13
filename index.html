@@ -100,7 +100,7 @@ label.check input{width:20px;height:20px}
 input,select,textarea{font:inherit;font-size:16px;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-width:0}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.inline{display:flex;gap:6px}
+.inline{display:flex;gap:6px}.inline>.btn{white-space:nowrap;flex:none}
 .margin{font-size:13px;color:var(--muted);margin-top:-4px}
 .bc-box{background:#fff;border-radius:12px;padding:8px;display:flex;justify-content:center;margin:12px 0}
 .bc-box svg{max-width:100%;height:auto}
@@ -142,6 +142,14 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 .seg button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .qty{display:flex;gap:6px}.qty input{text-align:center;font-size:20px;font-weight:700}.qty .btn{width:54px;font-size:20px;flex:none}
 .tot input{font-weight:700}
+.locs{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.locsplit{display:flex;flex-direction:column;margin:-4px 0 12px;font-size:14px}
+.locsplit div{display:flex;justify-content:space-between;gap:10px;padding:7px 4px;border-bottom:1px solid var(--line)}
+.locsplit div:last-child{border-bottom:none}.locsplit b{font-size:15px}
+.mv.xfer .mvl b{color:var(--accent)}
+.locrow{display:flex;gap:8px;align-items:center}.locrow input{flex:1}.locrow .muted{white-space:nowrap;font-size:13px}
+.locfilter{margin-top:10px}
+.stock small.lf{display:block;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .overlay{position:fixed;inset:0;z-index:50;background:#000;color:#fff;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 .overlay[hidden]{display:none}
@@ -199,6 +207,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
     <h2 id="mvTitle">Mouvement</h2>
     <p id="mvProd" class="muted small"></p>
     <div class="seg" id="mvTypes"></div>
+    <label id="m_locWrap" hidden><span data-i18n>Lieu</span><select id="m_loc"></select></label>
     <label>Date<input type="datetime-local" id="m_date"></label>
     <label><span data-i18n>Quantité</span>
       <span class="qty"><button type="button" class="btn" data-q="-1">−</button><input id="m_qty" inputmode="decimal" autocomplete="off"><button type="button" class="btn" data-q="1">+</button></span>
@@ -235,7 +244,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <script>
 'use strict';
 /* ====== Constantes ====== */
-const APP_VERSION = '21';
+const APP_VERSION = '22';
 const FILE_NAME = 'gestion-stock-donnees.json';
 const CATALOG_NAME = 'gestion-stock-catalogue.json';   // 2e fichier : vitrine publique (lecture seule, sans prix d'achat ni mouvements)
 // Clé d'API Google (restreinte à « Google Drive API » et au site https://rkroman-86.github.io/*) :
@@ -254,7 +263,7 @@ const TYPES = {
   out: { vente: 'Vente', don: 'Don', inventaire: 'Inventaire' }
 };
 const TVA_RATES = [20, 10, 5.5, 2.1, 0];
-const typeLabel = (dir, type) => tr((TYPES[dir] || {})[type] || type);
+const typeLabel = (dir, type) => tr((TYPES[dir] || {})[type] || (type === 'transfert' ? 'Transfert' : type));
 // Champ « taux de TVA » : liste des taux connus + « Autre taux… » avec saisie libre.
 // L'input #id porte toujours la valeur (masqué quand un taux connu est choisi).
 function vatField(id, value) {
@@ -637,7 +646,49 @@ const EN = {
 "Seulement pour le catalogue public avec votre propre projet : <b>Identifiants → Créer → Clé API</b>, limitée à <b>Google Drive API</b> et aux sites <code>{o}/*</code>.": "Only for the public catalogue with your own project: <b>Credentials → Create → API key</b>, restricted to <b>Google Drive API</b> and websites <code>{o}/*</code>.",
 "Numéro WhatsApp invalide : indiquez-le au format international (+33…)": "Invalid WhatsApp number: use international format (+44…)",
 "Catalogue": "Catalogue",
-"Lien copié": "Link copied"
+"Lien copié": "Link copied",
+"Sans lieu": "No location",
+"(supprimé)": "(deleted)",
+"Lieu inconnu": "Unknown location",
+"— Sans lieu —": "— No location —",
+"Transfert entre lieux": "Transfer between locations",
+"stock total :": "total stock:",
+"De": "From",
+"Vers": "To",
+"Bon de livraison, chantier, motif…": "Delivery note, job site, reason…",
+"Transférer": "Transfer",
+"Disponible à « {l} » : {q}": "Available at “{l}”: {q}",
+"Choisissez deux lieux différents": "Choose two different locations",
+"Stock insuffisant à « {l} » ({s}). Transférer quand même ?": "Not enough stock at “{l}” ({s}). Transfer anyway?",
+"Transfert enregistré : {q} · {a} → {b}": "Transfer saved: {q} · {a} → {b}",
+"Lieu": "Location",
+"Tous les lieux": "All locations",
+"Lieu par défaut": "Default location",
+"Transfert": "Transfer",
+"Stock insuffisant à « {l} » ({s} en stock). Enregistrer quand même ?": "Not enough stock at “{l}” ({s} in stock). Save anyway?",
+"TOTAUX PAR LIEU": "TOTALS BY LOCATION",
+"Transferts entre lieux (hors entrées/sorties)": "Transfers between locations (not counted as in/out)",
+"VENTES PAR LIEU": "SALES BY LOCATION",
+"Transferts entre lieux": "Transfers between locations",
+"Par lieu": "By location",
+"Achat": "Cost",
+"• {n} nouveau(x) lieu(x) créé(s)": "• {n} new location(s) created",
+"★ = lieu de vente par défaut : présélectionné pour chaque vente (et Sortie rapide au scan) et chaque retour client. Touchez l'étoile pour le choisir.": "★ = default sales location: preselected for every sale (and Quick sale when scanning) and every customer return. Tap the star to choose it.",
+"Lieu de vente par défaut": "Default sales location",
+"Nom du lieu": "Location name",
+"Aucun lieu pour l'instant.": "No locations yet.",
+"à répartir avec le bouton « Transfert » de chaque fiche produit.": "assign it with the “Transfer” button on each product.",
+"Ce lieu existe déjà": "This location already exists",
+"Lieu ajouté : {l}": "Location added: {l}",
+"Lieu de vente par défaut : {l}": "Default sales location: {l}",
+"Plus de lieu de vente par défaut": "No default sales location",
+"« {l} » contient encore {q} article(s) : transférez-les d'abord.": "“{l}” still holds {q} item(s): transfer them first.",
+"Supprimer le lieu « {l} » ?": "Delete location “{l}”?",
+"Lieux de stockage": "Storage locations",
+"Créez vos lieux (dépôt, magasin, chantier…) pour savoir où se trouve chaque produit et faire des transferts entre lieux. Sans lieu, l'appli fonctionne comme avant : le stock existant reste « Sans lieu ».": "Create your locations (warehouse, shop, job site…) to know where each product is and transfer stock between them. Without locations the app works as before: existing stock stays under “No location”.",
+"Nouveau lieu (ex. Dépôt, Magasin, Chantier Dupont)": "New location (e.g. Warehouse, Shop, Smith job site)",
+"Ajouter": "Add",
+"Supprimer ce transfert ? Le stock de chaque lieu sera recalculé.": "Delete this transfer? Stock at each location will be recalculated."
 };
 // Les textes sont écrits en français dans le code ; tr() renvoie la traduction anglaise si la langue est EN.
 // {nom} dans un texte est remplacé par la valeur correspondante.
@@ -676,7 +727,7 @@ const idb = {
 };
 
 /* ====== État ====== */
-let DB = { products: {}, movements: {}, config: {} };
+let DB = { products: {}, movements: {}, config: {}, locations: {} };
 // Réglages partagés entre appareils (enregistrés dans le fichier Drive) : chaque entrée porte son updatedAt
 const catCfg = () => Object.assign({ on: false, shop: '', phone: '', showOut: true, showHT: true }, (DB.config || {}).catalog || {});
 function setCat(patch) { DB.config = DB.config || {}; DB.config.catalog = { ...catCfg(), ...patch, updatedAt: nowISO() }; touch(); }
@@ -693,6 +744,90 @@ const movementsOf = id => Object.values(DB.movements).filter(m => !m.deleted && 
 const codeExists = (c, exceptId) => activeProducts().some(p => p.code === c && p.id !== exceptId);
 const findByCode = c => activeProducts().find(p => p.code === c || p.code === '0' + c || '0' + p.code === c);
 const stockCls = (s, p) => s <= 0 ? 'zero' : s <= (+p.minStock || 0) ? 'low' : 'ok';
+
+/* ====== Lieux (dépôt, magasin, chantier…) ====== */
+// Chaque mouvement peut porter un lieu (m.loc ; absent ou '' = « Sans lieu »). Stock d'un lieu = somme de ses mouvements.
+// Un transfert = 2 mouvements liés par m.xfer : sortie du lieu de départ + entrée dans le lieu d'arrivée (stock total inchangé).
+// Sans aucun lieu créé, l'appli se comporte exactement comme avant.
+const activeLocs = () => Object.values(DB.locations || {}).filter(l => !l.deleted).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr'));
+const locName = id => { if (!id) return tr('Sans lieu'); const l = (DB.locations || {})[id]; return l ? l.name + (l.deleted ? ' ' + tr('(supprimé)') : '') : tr('Lieu inconnu'); };
+const hasLocs = () => activeLocs().length > 0 || Object.values(DB.movements).some(m => !m.deleted && m.loc);
+const defLoc = p => (p && p.loc && DB.locations[p.loc] && !DB.locations[p.loc].deleted) ? p.loc : '';
+// Lieu de vente par défaut (partagé entre appareils via DB.config.sales) : présélectionné pour les ventes et retours clients
+const saleLoc = () => { const id = ((DB.config || {}).sales || {}).loc; return id && DB.locations[id] && !DB.locations[id].deleted ? id : ''; };
+function setSaleLoc(id) { DB.config = DB.config || {}; DB.config.sales = { ...((DB.config || {}).sales || {}), loc: id || '', updatedAt: nowISO() }; touch(); }
+const isSaleType = (dir, type) => (dir === 'out' && type === 'vente') || (dir === 'in' && type === 'retour');
+// Lieu proposé : celui demandé (filtre de la liste…), sinon le lieu de vente par défaut pour une vente / un retour, sinon le lieu par défaut du produit
+const proposedLoc = (p, dir, type) => (isSaleType(dir, type) && saleLoc()) || defLoc(p);
+// { produit: { lieu: quantité } } (à une date donnée si précisée)
+function locStockAll(date) {
+  const d = date ? date.toISOString() : null, r = {};
+  for (const m of Object.values(DB.movements)) {
+    if (m.deleted || (d && m.date >= d)) continue;
+    const o = r[m.productId] = r[m.productId] || {}, k = m.loc || '';
+    o[k] = (o[k] || 0) + (m.dir === 'in' ? 1 : -1) * (+m.qty || 0);
+  }
+  return r;
+}
+const locStockOf = (pid, date) => locStockAll(date)[pid] || {};
+// [[lieu, qté], …] sans les lieux à zéro, triés par nom, « Sans lieu » en dernier
+const locSplit = byLoc => Object.entries(byLoc || {}).filter(([, q]) => Math.abs(q) > 1e-9)
+  .sort((a, b) => (a[0] === '') - (b[0] === '') || locName(a[0]).localeCompare(locName(b[0]), 'fr'));
+function locOptions(sel, withEmpty = true) {
+  const ls = activeLocs();
+  let h = withEmpty ? `<option value=""${!sel ? ' selected' : ''}>${tr('— Sans lieu —')}</option>` : '';
+  h += ls.map(l => `<option value="${l.id}"${l.id === sel ? ' selected' : ''}>${esc(l.name)}</option>`).join('');
+  if (sel && !ls.some(l => l.id === sel)) h += `<option value="${sel}" selected>${esc(locName(sel))}</option>`;
+  return h;
+}
+const findLocByName = n => activeLocs().find(l => l.name.trim().toLowerCase() === String(n).trim().toLowerCase());
+function findOrCreateLoc(name) {   // n'appelle pas touch() : à faire par l'appelant
+  const n = String(name || '').trim(); if (!n) return '';
+  const ex = findLocByName(n); if (ex) return ex.id;
+  const id = uid(), t = nowISO(); DB.locations[id] = { id, name: n, createdAt: t, updatedAt: t, deleted: false }; return id;
+}
+function addTransfer(p, from, to, q, dateISO, note) {
+  const t = nowISO(), x = uid(), a = uid(), b = uid();
+  const base = { productId: p.id, type: 'transfert', date: dateISO, qty: q, unitHT: +p.buyHT || 0, tva: +p.tva || 0, note: note || '', xfer: x, createdAt: t, updatedAt: t, deleted: false };
+  DB.movements[a] = { ...base, id: a, dir: 'out', loc: from || '' };
+  DB.movements[b] = { ...base, id: b, dir: 'in', loc: to || '' };
+}
+// Fenêtre « Transfert entre lieux »
+function openTransfer(pid) {
+  const p = DB.products[pid]; if (!p) return;
+  const split = locStockOf(pid), pos = locSplit(split).filter(([, q]) => q > 0);
+  const from = pos.length ? pos[0][0] : defLoc(p);
+  const to = (activeLocs().find(l => l.id !== from) || {}).id || '';
+  $('#infoTitle').textContent = tr('Transfert entre lieux');
+  $('#infoBody').innerHTML = `
+    <p class="muted small" style="margin:0">${esc(p.name)} · ${tr('stock total :')} ${fmtNum(stockOf(pid))}</p>
+    <label>${tr('De')}<select id="x_from">${locOptions(from)}</select></label>
+    <p class="muted small" id="x_avail" style="margin:-6px 0 0"></p>
+    <label>${tr('Vers')}<select id="x_to">${locOptions(to)}</select></label>
+    <label>${tr('Quantité')}<span class="qty"><button type="button" class="btn" data-xq="-1">−</button><input id="x_qty" inputmode="decimal" value="1" autocomplete="off"><button type="button" class="btn" data-xq="1">+</button></span></label>
+    <label>Date<input type="datetime-local" id="x_date" value="${localDT()}"></label>
+    <label>${tr('Référence / note')}<input id="x_note" placeholder="${tr('Bon de livraison, chantier, motif…')}" autocomplete="off"></label>
+    <button class="btn primary block big" id="x_ok" type="button">⇄ ${tr('Transférer')}</button>`;
+  const avail = () => locStockOf(pid)[$('#x_from').value] || 0;
+  const showAvail = () => { $('#x_avail').textContent = tr('Disponible à « {l} » : {q}', { l: locName($('#x_from').value), q: fmtNum(avail()) }); };
+  showAvail();
+  $('#x_from').onchange = showAvail;
+  $$('[data-xq]').forEach(b => b.onclick = () => { $('#x_qty').value = fmtNum(Math.max(0, num($('#x_qty').value) + +b.dataset.xq)); });
+  $('#x_qty').addEventListener('focus', e => e.target.select());
+  $('#x_ok').onclick = () => {
+    const q = num($('#x_qty').value), from = $('#x_from').value, to = $('#x_to').value;
+    if (!(q > 0)) { toast(tr('Quantité invalide')); return; }
+    if (from === to) { toast(tr('Choisissez deux lieux différents')); return; }
+    const a = avail();
+    if (q > a && !confirm(tr('Stock insuffisant à « {l} » ({s}). Transférer quand même ?', { l: locName(from), s: fmtNum(a) }))) return;
+    const dv = $('#x_date').value;
+    addTransfer(DB.products[pid], from, to, q, dv ? new Date(dv).toISOString() : nowISO(), $('#x_note').value.trim());
+    $('#infoDlg').close(); touch();
+    toast(tr('Transfert enregistré : {q} · {a} → {b}', { q: fmtNum(q), a: locName(from), b: locName(to) }));
+    rerender();
+  };
+  $('#infoDlg').showModal();
+}
 
 /* ====== Codes-barres ====== */
 function ean13Check(d12) { let s = 0; for (let i = 0; i < 12; i++) s += (+d12[i]) * (i % 2 ? 3 : 1); return (10 - s % 10) % 10; }
@@ -803,7 +938,7 @@ function rerender() { const y = window.scrollY; route(); window.scrollTo(0, y); 
 window.addEventListener('hashchange', route);
 
 /* ====== Liste ====== */
-const listState = { q: '', filter: 'all' };
+const listState = { q: '', filter: 'all', loc: '*' };
 function viewList() {
   setTitle('Stock');
   const sm = stockMap(), prods = activeProducts();
@@ -816,21 +951,27 @@ function viewList() {
       <div><b>${eur(val)}</b><span>${tr('valeur HT (achat)')}</span></div>
     </div>
     <div class="search"><input id="q" type="search" placeholder="${tr('Rechercher un nom ou un code…')}" value="${esc(listState.q)}" autocomplete="off"></div>
+    ${hasLocs() ? `<select id="locf" class="locfilter" aria-label="${tr('Lieu')}"><option value="*">📍 ${tr('Tous les lieux')}</option>${locOptions(listState.loc === '*' ? '' : listState.loc)}</select>` : ''}
     <div class="chips">${[['all', tr('Tous')], ['low', tr('Stock bas') + (low ? ' · ' + low : '')], ['zero', tr('Rupture')]].map(([k, l]) => `<button class="chip${listState.filter === k ? ' on' : ''}" data-f="${k}">${l}</button>`).join('')}</div>
     <div id="grid" class="grid"></div>`;
   $('#q').addEventListener('input', e => { listState.q = e.target.value; renderGrid(); });
+  if ($('#locf')) { if (listState.loc === '*') $('#locf').value = '*'; $('#locf').onchange = e => { listState.loc = e.target.value; renderGrid(); }; }
   $$('.chip').forEach(b => b.onclick = () => { listState.filter = b.dataset.f; $$('.chip').forEach(x => x.classList.toggle('on', x === b)); renderGrid(); });
   $('#grid').onclick = e => {
     const card = e.target.closest('.card'); if (!card) return;
     const act = e.target.closest('[data-act]');
-    if (act) openMove(card.dataset.id, act.dataset.act); else location.hash = '#/p/' + card.dataset.id;
+    if (act) openMove(card.dataset.id, act.dataset.act, listState.loc !== '*' && hasLocs() ? { loc: listState.loc } : {}); else location.hash = '#/p/' + card.dataset.id;
   };
   renderGrid();
 }
 function renderGrid() {
   const g = $('#grid'); if (!g) return;
-  const sm = stockMap(), q = listState.q.trim().toLowerCase();
+  const tot = stockMap(), q = listState.q.trim().toLowerCase();
+  // Filtre par lieu : on affiche le stock du lieu choisi (produits présents à ce lieu, ou dont c'est le lieu par défaut)
+  const locsOn = hasLocs(), lf = locsOn ? listState.loc : '*', la = locsOn ? locStockAll() : {};
+  const sm = lf === '*' ? tot : Object.fromEntries(activeProducts().map(p => [p.id, (la[p.id] || {})[lf] || 0]));
   let prods = activeProducts().filter(p => !q || (p.name || '').toLowerCase().includes(q) || (p.code || '').includes(q));
+  if (lf !== '*') prods = prods.filter(p => Math.abs(sm[p.id] || 0) > 1e-9 || defLoc(p) === lf);
   if (listState.filter === 'low') prods = prods.filter(p => (sm[p.id] || 0) <= (+p.minStock || 0));
   if (listState.filter === 'zero') prods = prods.filter(p => (sm[p.id] || 0) <= 0);
   prods.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr'));
@@ -839,8 +980,9 @@ function renderGrid() {
     <article class="card" data-id="${p.id}">
       <div class="thumb">${p.photo ? `<img src="${p.photo}" alt="" loading="lazy">` : '<span>📦</span>'}</div>
       <div class="info"><h3>${esc(p.name)}</h3><div class="code">${esc(p.code)}</div>
-        <div class="price">${eur(ttc(p.sellHT, p.tva))} <small>${TTC()}</small> · ${eur(p.sellHT)} <small>${HT()}</small></div></div>
-      <div class="stock ${stockCls(s, p)}"><b>${fmtNum(s)}</b><small>${tr('en stock')}</small></div>
+        <div class="price">${eur(ttc(p.sellHT, p.tva))} <small>${TTC()}</small> · ${eur(p.sellHT)} <small>${HT()}</small></div>
+        ${locsOn ? (sp => sp.length && !(sp.length === 1 && sp[0][0] === '') ? `<div class="locs">📍 ${sp.map(([l, n]) => `${esc(locName(l))} ${fmtNum(n)}`).join(' · ')}</div>` : '')(locSplit(la[p.id])) : ''}</div>
+      <div class="stock ${stockCls(s, p)}"><b>${fmtNum(s)}</b><small${lf !== '*' ? ' class="lf"' : ''}>${lf !== '*' ? esc(locName(lf)) : tr('en stock')}</small></div>
       <div class="cact"><button class="btn in" data-act="in">＋ ${tr('Entrée')}</button><button class="btn out" data-act="out">− ${tr('Sortie')}</button></div>
     </article>`; }).join('');
 }
@@ -866,6 +1008,7 @@ function productForm(p, isNew) {
     <div class="pair"><label>${tr('Prix de vente HT')}<input id="f_sellHT" inputmode="decimal" value="${fx2(p.sellHT)}"></label><label>${tr('Prix de vente TTC')}<input id="f_sellTTC" inputmode="decimal" value="${fx2(ttc(p.sellHT, p.tva))}"></label></div>
     <div class="margin" id="margin"></div>
     <label>${tr('Seuil d\'alerte (stock bas)')}<input id="f_min" inputmode="decimal" value="${fmtNum(p.minStock || 0)}"></label>
+    ${activeLocs().length ? `<label>${tr('Lieu par défaut')}<select id="f_loc">${locOptions(defLoc(p))}</select></label>` : ''}
     ${isNew ? `<label>${tr('Quantité initiale en stock')}<input id="f_init" inputmode="decimal" value="0"></label>` : ''}
     <label>${tr('Note')}<textarea id="f_note" rows="2">${esc(p.note || '')}</textarea></label>
   </div>`;
@@ -907,7 +1050,8 @@ function bindForm(p, isNew, onSave) {
 
   return () => ({
     name: $('#f_name').value.trim(), code: $('#f_code').value.trim(), tva: tva(),
-    buyHT: v.buyHT, sellHT: v.sellHT, minStock: num($('#f_min').value), note: $('#f_note').value.trim()
+    buyHT: v.buyHT, sellHT: v.sellHT, minStock: num($('#f_min').value), note: $('#f_note').value.trim(),
+    loc: $('#f_loc') ? $('#f_loc').value : (target().loc || '')
   });
 }
 
@@ -934,7 +1078,7 @@ function viewNew(code) {
     const p = Object.assign(d, f, { createdAt: t, updatedAt: t, deleted: false });
     DB.products[p.id] = p;
     const q = num($('#f_init').value);
-    if (q > 0) { const id = uid(); DB.movements[id] = { id, productId: p.id, dir: 'in', type: 'inventaire', date: t, qty: q, unitHT: p.buyHT, tva: p.tva, note: tr('Stock initial'), createdAt: t, updatedAt: t, deleted: false }; }
+    if (q > 0) { const id = uid(); DB.movements[id] = { id, productId: p.id, dir: 'in', type: 'inventaire', date: t, qty: q, unitHT: p.buyHT, tva: p.tva, note: tr('Stock initial'), ...(p.loc ? { loc: p.loc } : {}), createdAt: t, updatedAt: t, deleted: false }; }
     touch(); toast(tr('Produit créé')); location.replace('#/p/' + p.id);
   };
 }
@@ -944,14 +1088,15 @@ function viewProduct(id) {
   const p = DB.products[id];
   if (!p || p.deleted) { toast(tr('Produit introuvable')); location.replace('#/'); return; }
   setTitle(p.name || tr('Produit'));
-  const s = stockOf(id), ms = movementsOf(id);
+  const s = stockOf(id), ms = movementsOf(id), locsOn = hasLocs(), split = locSplit(locStockOf(id)), canXfer = activeLocs().length > 0;
   const sales = ms.filter(m => m.dir === 'out' && m.type === 'vente');
   const soldQ = sales.reduce((a, m) => a + (+m.qty || 0), 0), ca = sales.reduce((a, m) => a + ttc(m.unitHT, m.tva) * m.qty, 0);
   view.innerHTML = `
     <a class="back" href="#/">← ${tr('Liste')}</a>
     <section class="panel">
       <div class="stockbig ${stockCls(s, p)}"><span>${tr('En stock')}</span><b>${fmtNum(s)}</b></div>
-      <div class="row2"><button class="btn in big" id="bIn" type="button">＋ ${tr('Entrée')}</button><button class="btn out big" id="bOut" type="button">− ${tr('Sortie')}</button></div>
+      ${locsOn && split.length ? `<div class="locsplit">${split.map(([l, n]) => `<div><span>📍 ${esc(locName(l))}</span><b>${fmtNum(n)}</b></div>`).join('')}</div>` : ''}
+      <div class="${canXfer ? 'row3' : 'row2'}"><button class="btn in big" id="bIn" type="button">＋ ${tr('Entrée')}</button><button class="btn out big" id="bOut" type="button">− ${tr('Sortie')}</button>${canXfer ? `<button class="btn big" id="bXfer" type="button">⇄ ${tr('Transfert')}</button>` : ''}</div>
     </section>
     <section class="panel"><h2>${tr('Fiche produit')}</h2>${productForm(p, false)}<p class="muted small">${tr('Les modifications sont enregistrées automatiquement.')}</p></section>
     <section class="panel"><h2>${tr('Étiquette')}</h2>
@@ -975,6 +1120,7 @@ function viewProduct(id) {
   $('#dlLbl').onclick = () => downloadLabel(DB.products[id]);
   $('#bIn').onclick = () => openMove(id, 'in');
   $('#bOut').onclick = () => openMove(id, 'out');
+  if ($('#bXfer')) $('#bXfer').onclick = () => openTransfer(id);
   $('#print').onclick = () => printLabel(DB.products[id]);
   if ($('#expHist')) $('#expHist').onclick = () => showProductExport(id);
   $('#del').onclick = () => {
@@ -985,16 +1131,30 @@ function viewProduct(id) {
     touch(); toast(tr('Produit supprimé')); location.replace('#/');
   };
   const hist = $('#hist');
-  hist.innerHTML = ms.length ? ms.map(m => { const u = ttc(m.unitHT, m.tva); return `
+  const seenX = new Set();
+  hist.innerHTML = ms.length ? ms.map(m => {
+    if (m.xfer) {   // transfert : une seule ligne « ⇄ qté  Départ → Arrivée »
+      if (seenX.has(m.xfer)) return ''; seenX.add(m.xfer);
+      const pair = ms.filter(o => o.xfer === m.xfer), a = pair.find(o => o.dir === 'out'), b = pair.find(o => o.dir === 'in');
+      return `
+    <div class="mv xfer">
+      <div class="mvl"><b>⇄ ${fmtNum(m.qty)}</b> ${tr('Transfert')}<small>${esc(a ? locName(a.loc) : '?')} → ${esc(b ? locName(b.loc) : '?')} · ${fmtDate(m.date)}${m.note ? ' · ' + esc(m.note) : ''}</small></div>
+      <div class="mvr"></div>
+      <button class="x" data-del="${m.id}" aria-label="${tr('Supprimer')}">✕</button>
+    </div>`;
+    }
+    const u = ttc(m.unitHT, m.tva); return `
     <div class="mv ${m.dir}">
-      <div class="mvl"><b>${m.dir === 'in' ? '+' : '−'}${fmtNum(m.qty)}</b> ${esc(typeLabel(m.dir, m.type))}<small>${fmtDate(m.date)}${m.note ? ' · ' + esc(m.note) : ''}</small></div>
+      <div class="mvl"><b>${m.dir === 'in' ? '+' : '−'}${fmtNum(m.qty)}</b> ${esc(typeLabel(m.dir, m.type))}<small>${fmtDate(m.date)}${locsOn ? ' · 📍 ' + esc(locName(m.loc)) : ''}${m.note ? ' · ' + esc(m.note) : ''}</small></div>
       <div class="mvr">${eur(u)} /u ${TTC()}<br><b>${eur(u * m.qty)}</b> ${TTC()}<br><span class="muted">${eur(m.unitHT * m.qty)} ${HT()}</span></div>
       <button class="x" data-del="${m.id}" aria-label="${tr('Supprimer')}">✕</button>
     </div>`; }).join('') : `<p class="muted">${tr('Aucun mouvement pour l\'instant.')}</p>`;
   hist.onclick = e => {
     const b = e.target.closest('[data-del]'); if (!b) return;
-    const m = DB.movements[b.dataset.del]; if (!m || !confirm(tr('Supprimer ce mouvement ? Le stock sera recalculé.'))) return;
-    Object.assign(m, { deleted: true, updatedAt: nowISO() }); touch(); rerender();
+    const m = DB.movements[b.dataset.del]; if (!m || !confirm(tr(m.xfer ? 'Supprimer ce transfert ? Le stock de chaque lieu sera recalculé.' : 'Supprimer ce mouvement ? Le stock sera recalculé.'))) return;
+    const t = nowISO();
+    for (const o of Object.values(DB.movements)) if (o === m || (m.xfer && o.xfer === m.xfer)) Object.assign(o, { deleted: true, updatedAt: t });
+    touch(); rerender();
   };
 }
 
@@ -1004,13 +1164,17 @@ const defaultPrice = (p, dir, type) => ((dir === 'out' && type === 'vente') || (
 function openMove(pid, dir, opts = {}) {
   const p = DB.products[pid]; if (!p) return;
   const types = TYPES[dir];
-  mv = { p, dir, type: opts.type || Object.keys(types)[0], tva: +p.tva || 0, u: 0, quick: !!opts.quick };
+  mv = { p, dir, type: opts.type || Object.keys(types)[0], tva: +p.tva || 0, u: 0, quick: !!opts.quick, locSet: opts.loc !== undefined && opts.loc !== null };
+  // Lieu : proposé dès qu'au moins un lieu existe (sinon mouvement « sans lieu » comme avant)
+  const locsOn = activeLocs().length > 0 || hasLocs();
+  $('#m_locWrap').hidden = !locsOn;
+  $('#m_loc').innerHTML = locsOn ? locOptions(mv.locSet ? opts.loc : proposedLoc(p, dir, mv.type)) : '';
   mv.u = defaultPrice(p, dir, mv.type);
   const dlg = $('#mvDlg');
   dlg.className = dir;
   $('#mvTitle').textContent = dir === 'in' ? tr('Entrée en stock') : tr('Sortie de stock');
   $('#mvOk').className = 'btn ' + dir;
-  $('#mvProd').textContent = `${p.name} · ${tr('stock actuel :')} ${fmtNum(stockOf(pid))}`;
+  mvShowStock();
   $('#mvTypes').innerHTML = Object.entries(types).map(([k, l]) => `<button type="button" data-t="${k}" class="${k === mv.type ? 'on' : ''}">${tr(l)}</button>`).join('');
   $('#m_date').value = localDT();
   $('#m_qty').value = '1';
@@ -1019,6 +1183,10 @@ function openMove(pid, dir, opts = {}) {
   mvRecalc();
   $('#mvOk').textContent = mv.quick ? tr('Valider et scanner le suivant') : tr('Valider');
   dlg.showModal();
+}
+function mvShowStock() {
+  const p = mv.p, loc = $('#m_locWrap').hidden ? null : $('#m_loc').value;
+  $('#mvProd').textContent = `${p.name} · ${tr('stock actuel :')} ${fmtNum(stockOf(p.id))}` + (loc !== null ? ` · ${locName(loc)} : ${fmtNum(locStockOf(p.id)[loc] || 0)}` : '');
 }
 function mvRecalc(field) {
   const q = num($('#m_qty').value), t = mv.tva;
@@ -1033,6 +1201,7 @@ function bindMoveDialog() {
   $('#mvTypes').onclick = e => {
     const b = e.target.closest('[data-t]'); if (!b) return;
     mv.type = b.dataset.t; $$('#mvTypes button').forEach(x => x.classList.toggle('on', x === b));
+    if (!mv.locSet && !$('#m_locWrap').hidden) { $('#m_loc').value = proposedLoc(mv.p, mv.dir, mv.type); mvShowStock(); }
     mv.u = defaultPrice(mv.p, mv.dir, mv.type); mvRecalc();
   };
   ['uht', 'uttc', 'tht', 'tttc'].forEach(k => {
@@ -1040,6 +1209,7 @@ function bindMoveDialog() {
     $('#m_' + k).addEventListener('change', () => mvRecalc());
   });
   $('#m_qty').addEventListener('input', () => mvRecalc('qty'));
+  $('#m_loc').addEventListener('change', () => { if (mv) mv.locSet = true; mvShowStock(); });
   $$('[data-q]').forEach(b => b.onclick = () => { $('#m_qty').value = fmtNum(Math.max(0, num($('#m_qty').value) + +b.dataset.q)); mvRecalc('qty'); });
   $$('#mvDlg input').forEach(i => i.addEventListener('focus', () => { if (i.inputMode === 'decimal') i.select(); }));
   $('#m_note').addEventListener('focus', e => e.target.select());
@@ -1051,9 +1221,13 @@ function bindMoveDialog() {
     const q = num($('#m_qty').value);
     if (!(q > 0)) { toast(tr('Quantité invalide')); return; }
     const { p, dir } = mv;
-    if (dir === 'out') { const s = stockOf(p.id); if (q > s && !confirm(tr('Stock insuffisant ({s} en stock). Enregistrer quand même ?', { s: fmtNum(s) }))) return; }
+    const loc = $('#m_locWrap').hidden ? '' : $('#m_loc').value;
+    if (dir === 'out') {
+      if ($('#m_locWrap').hidden) { const s = stockOf(p.id); if (q > s && !confirm(tr('Stock insuffisant ({s} en stock). Enregistrer quand même ?', { s: fmtNum(s) }))) return; }
+      else { const s = locStockOf(p.id)[loc] || 0; if (q > s && !confirm(tr('Stock insuffisant à « {l} » ({s} en stock). Enregistrer quand même ?', { l: locName(loc), s: fmtNum(s) }))) return; }
+    }
     const dv = $('#m_date').value, t = nowISO(), id = uid();
-    DB.movements[id] = { id, productId: p.id, dir, type: mv.type, date: dv ? new Date(dv).toISOString() : t, qty: q, unitHT: mv.u, tva: mv.tva, note: $('#m_note').value.trim(), createdAt: t, updatedAt: t, deleted: false };
+    DB.movements[id] = { id, productId: p.id, dir, type: mv.type, date: dv ? new Date(dv).toISOString() : t, qty: q, unitHT: mv.u, tva: mv.tva, note: $('#m_note').value.trim(), ...(loc ? { loc } : {}), createdAt: t, updatedAt: t, deleted: false };
     if (mv.quick) { S.lastRef = $('#m_note').value.trim(); saveS(); }
     $('#mvDlg').close(); touch();
     toast(tr(dir === 'in' ? 'Entrée enregistrée : {q}' : 'Sortie enregistrée : {q}', { q: (dir === 'in' ? '+' : '−') + fmtNum(q) }));
@@ -1223,10 +1397,10 @@ async function syncNow(interactive) {
     let changed = 0;
     if (fileId) {
       const r = await api(`${base}/${fileId}?alt=media`);
-      if (r.ok) { const remote = await r.json().catch(() => null); if (remote) { let n; [DB.products, n] = mergeColl(DB.products, remote.products); changed += n; [DB.movements, n] = mergeColl(DB.movements, remote.movements); changed += n; [DB.config, n] = mergeColl(DB.config || {}, remote.config); changed += n; } }
+      if (r.ok) { const remote = await r.json().catch(() => null); if (remote) { let n; [DB.products, n] = mergeColl(DB.products, remote.products); changed += n; [DB.movements, n] = mergeColl(DB.movements, remote.movements); changed += n; [DB.config, n] = mergeColl(DB.config || {}, remote.config); changed += n; [DB.locations, n] = mergeColl(DB.locations || {}, remote.locations); changed += n; } }
     }
     if (dedupeByCode()) { changed++; ver++; }
-    const body = JSON.stringify({ app: 'gestion-stock', version: 1, savedAt: nowISO(), products: DB.products, movements: DB.movements, config: DB.config || {} });
+    const body = JSON.stringify({ app: 'gestion-stock', version: 1, savedAt: nowISO(), products: DB.products, movements: DB.movements, config: DB.config || {}, locations: DB.locations || {} });
     if (fileId) {
       const r = await api(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
       if (!r.ok) throw new Error(tr('Envoi vers Drive : erreur ') + r.status);
@@ -1378,7 +1552,8 @@ function download(name, content, type) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type })); a.download = name;
   document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
 }
-const csvCell = v => { const s = String(v ?? ''); return /[;,"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+// Guillemets seulement si la valeur contient le séparateur (« ; » en FR, « , » en EN), un guillemet ou un saut de ligne
+const csvCell = v => { const s = String(v ?? ''); return (isEN() ? /[,"\n\r]/ : /[;"\n\r]/).test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
 const dec = n => isEN() ? fx2(n) : fx2(n).replace('.', ',');
 // Séparateur « ; » et virgule décimale en français (Excel FR), « , » et point en anglais (Excel EN)
 const toCSV = rows => '\ufeff' + rows.map(r => r.map(csvCell).join(isEN() ? ',' : ';')).join('\r\n');
@@ -1394,6 +1569,17 @@ function stockTotals() {
   }
   return t;
 }
+// Totaux par lieu (stocks négatifs comptés pour zéro), « Sans lieu » en dernier
+function locTotals() {
+  const la = locStockAll(), g = {};
+  for (const p of activeProducts()) for (const [loc, q] of Object.entries(la[p.id] || {})) {
+    const s = Math.max(q, 0), o = g[loc] = g[loc] || { loc, units: 0, buyHT: 0, buyTTC: 0, sellHT: 0, sellTTC: 0 };
+    o.units += s; o.buyHT += s * (+p.buyHT || 0); o.buyTTC += s * ttc(p.buyHT, p.tva); o.sellHT += s * (+p.sellHT || 0); o.sellTTC += s * ttc(p.sellHT, p.tva);
+  }
+  for (const l of activeLocs()) if (!g[l.id]) g[l.id] = { loc: l.id, units: 0, buyHT: 0, buyTTC: 0, sellHT: 0, sellTTC: 0 };
+  return Object.values(g).filter(o => o.units > 1e-9 || (o.loc && DB.locations[o.loc] && !DB.locations[o.loc].deleted))
+    .sort((a, b) => (a.loc === '') - (b.loc === '') || locName(a.loc).localeCompare(locName(b.loc), 'fr'));
+}
 // Coût d'achat d'une sortie = quantité × prix d'achat HT de la fiche produit
 const costHT = m => (m.qty || 0) * (+(DB.products[m.productId] || {}).buyHT || 0);
 const gainHT = m => (m.dir === 'out' && m.type === 'vente') ? m.unitHT * m.qty - costHT(m) : 0;
@@ -1408,9 +1594,10 @@ function stockAt(pid, date) {
   return s;
 }
 function moveTotals(list) {
-  const T = { n: list.length, in: { q: 0, ht: 0, ttc: 0 }, out: { q: 0, ht: 0, ttc: 0 }, types: {}, venteQ: 0, venteHT: 0, venteTTC: 0, coutHT: 0, gainHT: 0 };
+  const T = { n: list.length, in: { q: 0, ht: 0, ttc: 0 }, out: { q: 0, ht: 0, ttc: 0 }, types: {}, venteQ: 0, venteHT: 0, venteTTC: 0, coutHT: 0, gainHT: 0, xferQ: 0 };
   for (const dir of ['in', 'out']) for (const k in TYPES[dir]) T.types[dir + '.' + k] = { dir, label: typeLabel(dir, k), q: 0, ht: 0, ttc: 0 };
   for (const m of list) {
+    if (m.type === 'transfert') { if (m.dir === 'in') T.xferQ += +m.qty || 0; continue; }   // déplacement entre lieux : stock total inchangé
     const ht = m.unitHT * m.qty, tt = ttc(m.unitHT, m.tva) * m.qty, g = T[m.dir], ty = T.types[m.dir + '.' + m.type];
     g.q += +m.qty; g.ht += ht; g.ttc += tt;
     if (ty) { ty.q += +m.qty; ty.ht += ht; ty.ttc += tt; }
@@ -1421,36 +1608,49 @@ function moveTotals(list) {
 }
 
 function exportStockCSV() {
-  const sm = stockMap();
-  const rows = [['Code', 'Nom', 'Stock', 'TVA %', 'Achat HT', 'Achat TTC', 'Vente HT', 'Vente TTC', 'Valeur d\'achat HT', 'Valeur d\'achat TTC', 'Valeur vénale HT', 'Valeur vénale TTC', 'Seuil alerte'].map(h => tr(h))];
+  // Avec des lieux : une ligne par produit et par lieu (colonne « Lieu », vide = sans lieu) — réimportable telle quelle
+  const sm = stockMap(), withLoc = hasLocs(), la = withLoc ? locStockAll() : {};
+  const L = a => withLoc ? [a[0], a[1], a[2] ?? '', ...a.slice(3)] : [a[0], a[1], ...a.slice(3)];   // insère/retire la colonne Lieu
+  const rows = [L(['Code', 'Nom', 'Lieu', 'Stock', 'TVA %', 'Achat HT', 'Achat TTC', 'Vente HT', 'Vente TTC', 'Valeur d\'achat HT', 'Valeur d\'achat TTC', 'Valeur vénale HT', 'Valeur vénale TTC', 'Seuil alerte']).map(h => tr(h))];
   activeProducts().sort((a, b) => a.name.localeCompare(b.name, 'fr')).forEach(p => {
-    const s = sm[p.id] || 0, sp = Math.max(s, 0);
-    rows.push([p.code, p.name, fmtNum(s), dec(p.tva), dec(p.buyHT), dec(ttc(p.buyHT, p.tva)), dec(p.sellHT), dec(ttc(p.sellHT, p.tva)),
-      dec(sp * p.buyHT), dec(sp * ttc(p.buyHT, p.tva)), dec(sp * p.sellHT), dec(sp * ttc(p.sellHT, p.tva)), fmtNum(p.minStock || 0)]);
+    const lines = withLoc ? locSplit(la[p.id]) : [];
+    if (!lines.length) lines.push([withLoc ? defLoc(p) : '', sm[p.id] || 0]);
+    for (const [loc, s] of lines) {
+      const sp = Math.max(s, 0);
+      rows.push(L([p.code, p.name, loc ? locName(loc) : '', fmtNum(s), dec(p.tva), dec(p.buyHT), dec(ttc(p.buyHT, p.tva)), dec(p.sellHT), dec(ttc(p.sellHT, p.tva)),
+        dec(sp * p.buyHT), dec(sp * ttc(p.buyHT, p.tva)), dec(sp * p.sellHT), dec(sp * ttc(p.sellHT, p.tva)), fmtNum(p.minStock || 0)]));
+    }
   });
   const tt = stockTotals();
   rows.push([]);
-  rows.push([tr('TOTAL'), `${tt.refs} ${tr('références')}`, fmtNum(tt.units), '', '', '', '', '', dec(tt.buyHT), dec(tt.buyTTC), dec(tt.sellHT), dec(tt.sellTTC), '']);
-  rows.push([tr('Marge potentielle'), '', '', '', '', '', '', '', '', '', dec(tt.sellHT - tt.buyHT), dec(tt.sellTTC - tt.buyTTC), '']);
+  rows.push(L([tr('TOTAL'), `${tt.refs} ${tr('références')}`, '', fmtNum(tt.units), '', '', '', '', '', dec(tt.buyHT), dec(tt.buyTTC), dec(tt.sellHT), dec(tt.sellTTC), '']));
+  rows.push(L([tr('Marge potentielle'), '', '', '', '', '', '', '', '', '', '', dec(tt.sellHT - tt.buyHT), dec(tt.sellTTC - tt.buyTTC), '']));
+  if (withLoc) {
+    rows.push([]); rows.push([tr('TOTAUX PAR LIEU')]);
+    rows.push(['Lieu', 'Unités en stock', 'Valeur d\'achat HT', 'Valeur d\'achat TTC', 'Valeur vénale HT', 'Valeur vénale TTC'].map(h => tr(h)));
+    for (const g of locTotals()) rows.push([locName(g.loc), fmtNum(g.units), dec(g.buyHT), dec(g.buyTTC), dec(g.sellHT), dec(g.sellTTC)]);
+  }
   download(`stock-${today()}.csv`, toCSV(rows), 'text/csv;charset=utf-8');
 }
 function exportMovesCSV(from, to, pid) {
-  const list = movesInRange(from, to, pid), prod = pid ? DB.products[pid] : null;
+  const list = movesInRange(from, to, pid), prod = pid ? DB.products[pid] : null, withLoc = hasLocs();
+  const L = a => withLoc ? [...a.slice(0, 5), a[5] ?? '', ...a.slice(6)] : [...a.slice(0, 5), ...a.slice(6)];   // colonne « Lieu » après « Type »
   const rows = [];
   if (prod) {
     rows.push([tr('Produit'), prod.name, 'Code', prod.code]);
     rows.push([tr('Période'), periodLabel(from, to)]);
     rows.push([tr('Stock en début de période'), fmtNum(from ? stockAt(pid, from) : 0)]);
     rows.push([tr('Stock en fin de période'), fmtNum(stockAt(pid, to))]);
+    if (withLoc) for (const [l, q] of locSplit(locStockOf(pid, to))) rows.push([`${tr('Stock en fin de période')} – ${locName(l)}`, fmtNum(q)]);
     rows.push([]);
   }
-  rows.push(['Date', 'Code', 'Produit', 'Sens', 'Type', 'Quantité', 'PU HT', 'PU TTC', 'Total HT', 'Total TTC', 'TVA %', 'Bénéfice HT (ventes)', 'Note'].map(h => tr(h)));
+  rows.push(L(['Date', 'Code', 'Produit', 'Sens', 'Type', 'Lieu', 'Quantité', 'PU HT', 'PU TTC', 'Total HT', 'Total TTC', 'TVA %', 'Bénéfice HT (ventes)', 'Note']).map(h => tr(h)));
   list.forEach(m => {
     const p = DB.products[m.productId] || {}, isSale = m.dir === 'out' && m.type === 'vente';
-    rows.push([fmtDate(m.date), p.code || '', p.name || '', m.dir === 'in' ? tr('Entrée') : tr('Sortie'), typeLabel(m.dir, m.type), fmtNum(m.qty), dec(m.unitHT), dec(ttc(m.unitHT, m.tva)), dec(m.unitHT * m.qty), dec(ttc(m.unitHT, m.tva) * m.qty), dec(m.tva), isSale ? dec(gainHT(m)) : '', m.note || '']);
+    rows.push(L([fmtDate(m.date), p.code || '', p.name || '', m.dir === 'in' ? tr('Entrée') : tr('Sortie'), typeLabel(m.dir, m.type), locName(m.loc), fmtNum(m.qty), dec(m.unitHT), dec(ttc(m.unitHT, m.tva)), dec(m.unitHT * m.qty), dec(ttc(m.unitHT, m.tva) * m.qty), dec(m.tva), isSale ? dec(gainHT(m)) : '', m.note || '']));
   });
   const T = moveTotals(list);
-  const line = (label, q, ht, tt, gain = '') => [label, '', '', '', '', q === '' ? '' : fmtNum(q), '', '', ht === '' ? '' : dec(ht), tt === '' ? '' : dec(tt), '', gain === '' ? '' : dec(gain), ''];
+  const line = (label, q, ht, tt, gain = '') => L([label, '', '', '', '', '', q === '' ? '' : fmtNum(q), '', '', ht === '' ? '' : dec(ht), tt === '' ? '' : dec(tt), '', gain === '' ? '' : dec(gain), '']);
   rows.push([]);
   for (const ty of Object.values(T.types)) if (ty.q) rows.push(line(`${tr(ty.dir === 'in' ? 'Total entrées' : 'Total sorties')} – ${ty.label}`, ty.q, ty.ht, ty.ttc));
   rows.push(line(tr('TOTAL ENTRÉES'), T.in.q, T.in.ht, T.in.ttc));
@@ -1458,6 +1658,7 @@ function exportMovesCSV(from, to, pid) {
   rows.push(line(tr('Prix total de vente'), T.venteQ, T.venteHT, T.venteTTC));
   rows.push(line(tr('Coût d\'achat des articles vendus'), T.venteQ, T.coutHT, ''));
   rows.push(line(tr('BÉNÉFICE TOTAL (HT)'), '', '', '', T.gainHT));
+  if (T.xferQ) rows.push(line(tr('Transferts entre lieux (hors entrées/sorties)'), T.xferQ, '', ''));
   const ymd = d => localDT(d).slice(0, 10);
   const suffix = from || to ? `-${from ? ymd(from) : tr('debut')}_${to ? ymd(new Date(to - 1)) : today()}` : `-${today()}`;
   const tag = prod ? '-' + (prod.code || tr('produit')).replace(/[^\w-]/g, '') : '';
@@ -1505,12 +1706,28 @@ function exportComptaCSV(from, to) {
     rows.push([dfr(o.d), ref, fmtNum(o.q), dec(o.ht), dec(o.tva), dec(o.ht + o.tva), Object.entries(o.items).map(([n, q]) => `${fmtNum(q)} × ${n}`).join(' ; ')]);
   if (!Object.keys(byRef).length) rows.push(['—']);
   rows.push([]);
+  // B2. Par lieu (seulement si des lieux sont utilisés)
+  if (hasLocs()) {
+    const byLoc = {};
+    for (const m of list) {
+      if (!isSale(m) && !isRet(m)) continue;
+      const k = (m.loc || '') + '|' + (+m.tva || 0), o = byLoc[k] = byLoc[k] || { l: m.loc || '', r: +m.tva || 0, q: 0, ht: 0 };
+      const sg = isSale(m) ? 1 : -1; o.q += sg * m.qty; o.ht += sg * m.unitHT * m.qty;
+    }
+    rows.push([tr('VENTES PAR LIEU')]);
+    rows.push(['Lieu', 'Taux TVA %', 'Articles', 'Net HT', 'TVA collectée', 'Net TTC'].map(h => tr(h)));
+    for (const o of Object.values(byLoc).sort((a, b) => (a.l === '') - (b.l === '') || locName(a.l).localeCompare(locName(b.l), 'fr') || a.r - b.r))
+      rows.push([locName(o.l), dec(o.r), fmtNum(o.q), dec(o.ht), dec(o.ht * o.r / 100), dec(o.ht * (1 + o.r / 100))]);
+    if (!Object.keys(byLoc).length) rows.push(['—']);
+    rows.push([]);
+  }
   // C. Dons
   const dons = list.filter(isDon);
   rows.push([tr('DONS (valorisés au prix d\'achat HT)')]);
-  rows.push(['Date', 'Produit', 'Quantité', 'Valeur HT', 'Référence / note'].map(h => tr(h)));
+  const wl = hasLocs();
+  rows.push(['Date', 'Produit', ...(wl ? ['Lieu'] : []), 'Quantité', 'Valeur HT', 'Référence / note'].map(h => tr(h)));
   let donsHT = 0;
-  for (const m of dons) { const v = m.qty * (+(DB.products[m.productId] || {}).buyHT || 0); donsHT += v; rows.push([dfr(day(m)), pname(m), fmtNum(m.qty), dec(v), m.note || '']); }
+  for (const m of dons) { const v = m.qty * (+(DB.products[m.productId] || {}).buyHT || 0); donsHT += v; rows.push([dfr(day(m)), pname(m), ...(wl ? [locName(m.loc)] : []), fmtNum(m.qty), dec(v), m.note || '']); }
   if (!dons.length) rows.push(['—']);
   rows.push([]);
   // D. Totaux par taux
@@ -1559,6 +1776,8 @@ function showProductExport(pid) {
         ${trow('＋ ' + tr('Entrées'), fmtNum(T.in.q))}
         ${trow('− ' + tr('Sorties'), fmtNum(T.out.q))}
         ${trow(tr('Stock en fin de période'), `<b>${fmtNum(stockAt(pid, to))}</b>`)}
+        ${hasLocs() ? locSplit(locStockOf(pid, to)).map(([l, q]) => trow('&nbsp;&nbsp;📍 ' + esc(locName(l)), fmtNum(q))).join('') : ''}
+        ${T.xferQ ? trow('⇄ ' + tr('Transferts entre lieux'), fmtNum(T.xferQ)) : ''}
         ${T.venteQ ? trow(tr('Ventes'), `${fmtNum(T.venteQ)} ${tr('u.')} · ${eur(T.venteTTC)} ${TTC()}`) + trow(tr('Bénéfice (HT)'), `<b>${eur(T.gainHT)}</b>`) : ''}
       </tbody></table>`;
     $('#infoCsv').disabled = !list.length;
@@ -1582,6 +1801,10 @@ function showStockTotals() {
       ${trow(tr('Valeur vénale'), eur(tt.sellHT), eur(tt.sellTTC))}
       ${trow(`<b>${tr('Marge potentielle')}</b>`, `<b>${eur(tt.sellHT - tt.buyHT)}</b>`, `<b>${eur(tt.sellTTC - tt.buyTTC)}</b>`)}
     </tbody></table>
+    ${hasLocs() ? `<h3 class="sub" style="margin:6px 0 0">📍 ${tr('Par lieu')}</h3>
+    <table class="tt"><thead><tr><th></th><th>${tr('Qté')}</th><th>${tr('Achat')} ${HT()}</th><th>${tr('Vente')} ${HT()}</th></tr></thead><tbody>
+      ${locTotals().map(g => trow(esc(locName(g.loc)), fmtNum(g.units), eur(g.buyHT), eur(g.sellHT))).join('')}
+    </tbody></table>` : ''}
     <p class="muted small">${tr('Valeur d\'achat = stock × prix d\'achat ; valeur vénale = stock × prix de vente. Les stocks négatifs comptent pour zéro.')}</p>
     <button class="btn block" id="infoCsv" type="button">📄 ${tr('Exporter le stock (CSV)')}</button>`;
   $('#infoCsv').onclick = exportStockCSV;
@@ -1628,6 +1851,7 @@ function showMoveTotals() {
         ${typeRows}
         ${trow(`<b>${tr('Total entrées')}</b>`, `<b>${fmtNum(T.in.q)}</b>`, `<b>${eur(T.in.ht)}</b>`, `<b>${eur(T.in.ttc)}</b>`)}
         ${trow(`<b>${tr('Total sorties')}</b>`, `<b>${fmtNum(T.out.q)}</b>`, `<b>${eur(T.out.ht)}</b>`, `<b>${eur(T.out.ttc)}</b>`)}
+        ${T.xferQ ? trow(`⇄ ${tr('Transferts entre lieux')}`, fmtNum(T.xferQ), '', '') : ''}
       </tbody></table>
       <table class="tt"><tbody>
         ${trow(tr('Ventes HT'), eur(T.venteHT))}
@@ -1664,7 +1888,8 @@ function askImportMode(j) {
   $('#infoDlg').showModal();
 }
 function importBackup(j, replace) {
-  const t = nowISO(), rp = j.products || {}, rm = j.movements || {};
+  const t = nowISO(), rp = j.products || {}, rm = j.movements || {}, rl = j.locations || {};
+  DB.locations = DB.locations || {};
   if (replace) {
     // Les données actuelles sont marquées supprimées et la sauvegarde reçoit une date récente,
     // pour qu'elle l'emporte aussi lors de la synchronisation avec Google Drive.
@@ -1672,10 +1897,12 @@ function importBackup(j, replace) {
     for (const m of Object.values(DB.movements)) if (!rm[m.id] && !m.deleted) Object.assign(m, { deleted: true, updatedAt: t });
     for (const p of Object.values(rp)) DB.products[p.id] = { ...p, updatedAt: t };
     for (const m of Object.values(rm)) DB.movements[m.id] = { ...m, updatedAt: t };
+    for (const l of Object.values(DB.locations)) if (!rl[l.id] && !l.deleted) Object.assign(l, { deleted: true, updatedAt: t });
+    for (const l of Object.values(rl)) DB.locations[l.id] = { ...l, updatedAt: t };
     touch(); toast(tr('Sauvegarde restaurée : {n} produit(s)', { n: Object.values(rp).filter(p => !p.deleted).length }));
   } else {
     let a, b, ph = 0;
-    [DB.products, a] = mergeColl(DB.products, rp); [DB.movements, b] = mergeColl(DB.movements, rm);
+    [DB.products, a] = mergeColl(DB.products, rp); [DB.movements, b] = mergeColl(DB.movements, rm); DB.locations = mergeColl(DB.locations, rl)[0];
     // Photo manquante sur l'appareil mais présente dans la sauvegarde : on la reprend toujours
     for (const r of Object.values(rp)) { const l = DB.products[r.id]; if (r.photo && l && !l.photo && !l.deleted) { l.photo = r.photo; l.updatedAt = t; ph++; } }
     const d = dedupeByCode();
@@ -1711,7 +1938,8 @@ const CSV_COLS = {
   buyTTC: ['achat ttc', 'prix achat ttc', 'prix d achat ttc', 'pa ttc', 'purchase incl vat', 'purchase price incl vat'],
   sellHT: ['vente ht', 'prix vente ht', 'prix de vente ht', 'pv ht', 'sale excl vat', 'sale price excl vat', 'price excl vat', 'net price'],
   sellTTC: ['vente ttc', 'prix vente ttc', 'prix de vente ttc', 'pv ttc', 'prix ttc', 'prix vente', 'prix de vente', 'prix', 'sale incl vat', 'sale price incl vat', 'price incl vat', 'sale price', 'selling price', 'retail price', 'price'],
-  min: ['seuil', 'seuil alerte', 'seuil d alerte', 'stock min', 'stock minimum', 'alerte', 'alert threshold', 'min stock', 'minimum stock', 'reorder level', 'reorder point']
+  min: ['seuil', 'seuil alerte', 'seuil d alerte', 'stock min', 'stock minimum', 'alerte', 'alert threshold', 'min stock', 'minimum stock', 'reorder level', 'reorder point'],
+  loc: ['lieu', 'emplacement', 'position', 'localisation', 'site', 'depot', 'entrepot', 'location', 'warehouse', 'store', 'place']
 };
 function importStockCSV(text) {
   const rows = parseCSV(text);
@@ -1721,24 +1949,36 @@ function importStockCSV(text) {
   if (col.name === undefined && col.code === undefined) { toast(tr('Colonnes introuvables : il faut au moins « Nom » ou « Code » en première ligne'), 5000); return; }
   const cell = (r, k) => col[k] === undefined ? '' : (r[col[k]] || '');
   const has = (r, k) => cell(r, k) !== '';
-  const sm = stockMap(), seen = new Set(), plan = [];
+  // Une colonne « Lieu » permet plusieurs lignes par produit (une par lieu) : la quantité de chaque lieu est ajustée.
+  // Sans colonne « Lieu », la quantité est le stock total (ajustement « sans lieu »), comme avant.
+  const withLoc = col.loc !== undefined;
+  const sm = stockMap(), la = locStockAll(), groups = new Map();
   let sciCodes = 0;
   for (const r of rows.slice(1)) {
     const name = cell(r, 'name'); let code = cell(r, 'code').replace(/\s/g, '');
-    if (/^(total|marge|potential margin)/i.test(r[0] || '') || (!name && !code)) continue;
+    if (/^tota(l|ux)\b/i.test(r[0] || '')) break;   // lignes de totaux en fin de fichier exporté
+    if (/^(marge|potential margin)/i.test(r[0] || '') || (!name && !code)) continue;
     if (/^\d+(,\d+)?e\+\d+$/i.test(code)) { sciCodes++; continue; }
-    if (code && seen.has(code)) continue; if (code) seen.add(code);
-    const ex = code ? findByCode(code) : (activeProducts().find(p => p.name.toLowerCase() === name.toLowerCase()));
-    if (!ex && !name) continue;
-    const tva = has(r, 'tva') ? num(cell(r, 'tva')) : ex ? +ex.tva : +S.tva;
-    const priceHT = (h, t) => has(r, h) ? num(cell(r, h)) : has(r, t) ? htFrom(num(cell(r, t)), tva) : null;
-    plan.push({ ex, code, name, tva, buyHT: priceHT('buyHT', 'buyTTC'), sellHT: priceHT('sellHT', 'sellTTC'),
-      min: has(r, 'min') ? num(cell(r, 'min')) : null, qty: has(r, 'qty') ? num(cell(r, 'qty')) : null });
+    const key = code ? 'c:' + code : 'n:' + name.toLowerCase();
+    let g = groups.get(key);
+    if (!g) {
+      const ex = code ? findByCode(code) : (activeProducts().find(p => p.name.toLowerCase() === name.toLowerCase()));
+      if (!ex && !name) continue;
+      const tva = has(r, 'tva') ? num(cell(r, 'tva')) : ex ? +ex.tva : +S.tva;
+      const priceHT = (h, t) => has(r, h) ? num(cell(r, h)) : has(r, t) ? htFrom(num(cell(r, t)), tva) : null;
+      g = { ex, code, name, tva, buyHT: priceHT('buyHT', 'buyTTC'), sellHT: priceHT('sellHT', 'sellTTC'), min: has(r, 'min') ? num(cell(r, 'min')) : null, qty: new Map() };
+      groups.set(key, g);
+    }
+    if (has(r, 'qty')) { const lk = withLoc ? cell(r, 'loc').trim() : null; g.qty.set(lk, (g.qty.get(lk) || 0) + num(cell(r, 'qty'))); }
   }
+  const plan = [...groups.values()];
   if (!plan.length) { toast(sciCodes ? tr('Codes-barres abîmés par Excel (format 2,00E+12) : mettez la colonne Code au format Texte') : tr('Aucun produit trouvé dans le fichier'), 5000); return; }
+  const cur = (x, lk) => !x.ex ? 0 : lk === null ? (sm[x.ex.id] || 0) : ((la[x.ex.id] || {})[lk ? (findLocByName(lk) || {}).id || '#new' : ''] || 0);
   const nNew = plan.filter(x => !x.ex).length, nUpd = plan.length - nNew;
-  const nAdj = plan.filter(x => x.qty !== null && x.qty !== (x.ex ? (sm[x.ex.id] || 0) : 0)).length;
+  let nAdj = 0; const newLocs = new Set();
+  for (const x of plan) for (const [lk, q] of x.qty) { if (q !== cur(x, lk)) nAdj++; if (lk && !findLocByName(lk)) newLocs.add(lk.toLowerCase()); }
   let msg = tr('Import CSV :\n• {a} nouveau(x) produit(s)\n• {b} produit(s) existant(s) mis à jour\n• {c} ajustement(s) de stock (mouvement « Inventaire »)', { a: nNew, b: nUpd, c: nAdj });
+  if (newLocs.size) msg += '\n' + tr('• {n} nouveau(x) lieu(x) créé(s)', { n: newLocs.size });
   if (sciCodes) msg += '\n\n⚠️ ' + tr('{n} ligne(s) ignorée(s) : code-barres abîmé par Excel (2,00E+12).', { n: sciCodes });
   if (!confirm(msg + '\n\n' + tr('Continuer ?'))) return;
   const t = nowISO();
@@ -1753,9 +1993,11 @@ function importStockCSV(text) {
       if (x.buyHT !== null) p.buyHT = x.buyHT; if (x.sellHT !== null) p.sellHT = x.sellHT; if (x.min !== null) p.minStock = x.min;
       p.updatedAt = t;
     }
-    if (x.qty !== null) {
-      const diff = x.qty - (x.ex ? (sm[p.id] || 0) : 0);
-      if (diff) { const id = uid(); DB.movements[id] = { id, productId: p.id, dir: diff > 0 ? 'in' : 'out', type: 'inventaire', date: t, qty: Math.abs(diff), unitHT: +p.buyHT || 0, tva: +p.tva || 0, note: 'Import CSV', createdAt: t, updatedAt: t, deleted: false }; }
+    for (const [lk, q] of x.qty) {
+      const loc = lk === null ? '' : findOrCreateLoc(lk);
+      const before = !x.ex ? 0 : lk === null ? (sm[p.id] || 0) : ((la[p.id] || {})[loc] || 0);
+      const diff = q - before;
+      if (diff) { const id = uid(); DB.movements[id] = { id, productId: p.id, dir: diff > 0 ? 'in' : 'out', type: 'inventaire', date: t, qty: Math.abs(diff), unitHT: +p.buyHT || 0, tva: +p.tva || 0, note: 'Import CSV', ...(loc ? { loc } : {}), createdAt: t, updatedAt: t, deleted: false }; }
     }
   }
   touch(); toast(tr('Import terminé : {n} produit(s)', { n: plan.length })); location.hash = '#/';
@@ -1786,6 +2028,40 @@ function bindLabelSettings() {
   $('#l_price').onchange = e => { cfg.price = e.target.checked; save(); };
   $('#l_rot').onchange = e => { cfg.rotate = e.target.checked; save(); };
 }
+function bindLocSettings() {
+  const units = () => { const r = {}; for (const o of Object.values(locStockAll())) for (const [l, q] of Object.entries(o)) r[l] = (r[l] || 0) + q; return r; };
+  const render = () => {
+    const u = units(), ls = activeLocs();
+    const sl = saleLoc();
+    $('#locList').innerHTML = (ls.length ? `<p class="muted small" style="margin:0">${tr('★ = lieu de vente par défaut : présélectionné pour chaque vente (et Sortie rapide au scan) et chaque retour client. Touchez l\'étoile pour le choisir.')}</p>` + ls.map(l => `<div class="locrow"><button class="btn sq${l.id === sl ? ' primary' : ' ghost'}" data-star="${l.id}" type="button" title="${tr('Lieu de vente par défaut')}" aria-label="${tr('Lieu de vente par défaut')}" aria-pressed="${l.id === sl}">${l.id === sl ? '★' : '☆'}</button><input data-ren="${l.id}" value="${esc(l.name)}" aria-label="${tr('Nom du lieu')}"><span class="muted">${fmtNum(u[l.id] || 0)} ${tr('u.')}</span><button class="btn ghost sq" data-rm="${l.id}" type="button" aria-label="${tr('Supprimer')}">✕</button></div>`).join('')
+      : `<p class="muted small" style="margin:0">${tr('Aucun lieu pour l\'instant.')}</p>`)
+      + (ls.length && Math.abs(u[''] || 0) > 1e-9 ? `<p class="muted small" style="margin:0">${tr('Sans lieu')} : ${fmtNum(u[''])} ${tr('u.')} — ${tr('à répartir avec le bouton « Transfert » de chaque fiche produit.')}</p>` : '');
+  };
+  render();
+  const add = () => {
+    const n = $('#locNew').value.trim(); if (!n) { $('#locNew').focus(); return; }
+    if (findLocByName(n)) { toast(tr('Ce lieu existe déjà')); return; }
+    findOrCreateLoc(n); touch(); $('#locNew').value = ''; render(); toast(tr('Lieu ajouté : {l}', { l: n }));
+  };
+  $('#locAdd').onclick = add;
+  $('#locNew').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+  $('#locList').addEventListener('change', e => {
+    const i = e.target.closest('[data-ren]'); if (!i) return;
+    const l = DB.locations[i.dataset.ren], n = i.value.trim();
+    if (!n) { i.value = l.name; return; }
+    const ex = findLocByName(n); if (ex && ex.id !== l.id) { toast(tr('Ce lieu existe déjà')); i.value = l.name; return; }
+    Object.assign(l, { name: n, updatedAt: nowISO() }); touch();
+  });
+  $('#locList').addEventListener('click', e => {
+    const st = e.target.closest('[data-star]');
+    if (st) { const id = st.dataset.star === saleLoc() ? '' : st.dataset.star; setSaleLoc(id); render(); toast(id ? tr('Lieu de vente par défaut : {l}', { l: locName(id) }) : tr('Plus de lieu de vente par défaut')); return; }
+    const b = e.target.closest('[data-rm]'); if (!b) return;
+    const l = DB.locations[b.dataset.rm], q = units()[l.id] || 0;
+    if (Math.abs(q) > 1e-9) { toast(tr('« {l} » contient encore {q} article(s) : transférez-les d\'abord.', { l: l.name, q: fmtNum(q) }), 4500); return; }
+    if (!confirm(tr('Supprimer le lieu « {l} » ?', { l: l.name }))) return;
+    Object.assign(l, { deleted: true, updatedAt: nowISO() }); touch(); render();
+  });
+}
 // Menus déroulants des paramètres : on mémorise l'état (ouvert / fermé) de chacun
 const foldOpen = k => (S.fold || {})[k] ? ' open' : '';
 function viewSettings() {
@@ -1807,6 +2083,11 @@ function viewSettings() {
     <label class="check"><input type="checkbox" id="l_price"> ${tr('Afficher le prix de vente TTC')}</label>
     <label class="check"><input type="checkbox" id="l_rot"> ${tr('Pivoter de 90° (si l\'appli de l\'imprimante l\'imprime de travers)')}</label>
     <div class="bc-box lbl"><img id="l_prev" alt="${tr('Aperçu')}"></div>
+  </div></div></details>
+  <details class="panel fold" data-k="locs"${foldOpen('locs')}><summary>📍 ${tr('Lieux de stockage')}</summary><div class="fold-in"><div class="stack">
+    <p class="muted small" style="margin:0">${tr('Créez vos lieux (dépôt, magasin, chantier…) pour savoir où se trouve chaque produit et faire des transferts entre lieux. Sans lieu, l\'appli fonctionne comme avant : le stock existant reste « Sans lieu ».')}</p>
+    <div id="locList" class="stack"></div>
+    <div class="inline"><input id="locNew" placeholder="${tr('Nouveau lieu (ex. Dépôt, Magasin, Chantier Dupont)')}" autocomplete="off"><button class="btn primary" id="locAdd" type="button">＋ ${tr('Ajouter')}</button></div>
   </div></div></details>
   <details class="panel fold" data-k="compta"${foldOpen('compta')}><summary>💶 ${tr('Compta')}</summary><div class="fold-in"><div class="stack">
     <button class="btn primary block" id="s_tot1" type="button">📦 ${tr('Totaux du stock (valeur d\'achat et vénale)')}</button>
@@ -1915,13 +2196,14 @@ function viewSettings() {
     accessToken = null; tokenExp = 0; localStorage.removeItem(TKEY); S.driveOn = false; S.fileId = null; S.email = ''; S.catalogId = null; S.catalogShared = false; S.catalogHash = ''; saveS(); updateBadge(); viewSettings(); toast(tr('Déconnecté'));
   };
   bindVatField('s_tva', r => { S.tva = r; saveS(); });
+  bindLocSettings();
   $('#s_csv1').onclick = exportStockCSV;
   $('#s_csv2').onclick = () => exportMovesCSV();
   bindLabelSettings();
   $('#s_tot1').onclick = showStockTotals;
   $('#s_tot2').onclick = showMoveTotals;
   $('#s_compta').onclick = () => { movePeriod = 'today'; showMoveTotals(); };
-  $('#s_exp').onclick = () => download(`${tr('stock-sauvegarde')}-${today()}.json`, JSON.stringify({ app: 'gestion-stock', version: 1, savedAt: nowISO(), products: DB.products, movements: DB.movements, config: DB.config || {} }), 'application/json');
+  $('#s_exp').onclick = () => download(`${tr('stock-sauvegarde')}-${today()}.json`, JSON.stringify({ app: 'gestion-stock', version: 1, savedAt: nowISO(), products: DB.products, movements: DB.movements, config: DB.config || {}, locations: DB.locations || {} }), 'application/json');
   $('#s_imp').onclick = () => $('#s_impIn').click();
   $('#s_impIn').onchange = async e => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -1946,14 +2228,14 @@ function viewSettings() {
   $('#s_reset').onclick = async () => {
     if (!confirm(tr('Effacer tous les produits et mouvements de cet appareil ?'))) return;
     if (!S.driveOn && !confirm(tr('Drive n\'est pas connecté : les données seront définitivement perdues. Continuer ?'))) return;
-    DB = { products: {}, movements: {}, config: {} }; S.dirty = false; saveS(); await persist(); updateBadge(); toast(tr('Données locales effacées'));
+    DB = { products: {}, movements: {}, config: {}, locations: {} }; S.dirty = false; saveS(); await persist(); updateBadge(); toast(tr('Données locales effacées'));
   };
 }
 
 /* ====== Démarrage ====== */
 async function init() {
   const t = safeJSON(localStorage.getItem(TKEY)); if (t.t && t.e > Date.now()) { accessToken = t.t; tokenExp = t.e; }
-  try { await idb.open(); const d = await idb.get('db'); if (d && d.products) DB = { products: d.products || {}, movements: d.movements || {}, config: d.config || {} }; }
+  try { await idb.open(); const d = await idb.get('db'); if (d && d.products) DB = { products: d.products || {}, movements: d.movements || {}, config: d.config || {}, locations: d.locations || {} }; }
   catch (e) { toast(tr('Stockage local indisponible : ') + e.message, 5000); }
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   applyStatic();
