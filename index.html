@@ -160,6 +160,9 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 .scan-manual{display:flex;gap:8px;padding:12px 16px}
 .scan-mode{padding:0 16px 10px;display:flex;flex-direction:column;gap:6px}
 .scan-mode small{color:#bbb;font-size:12px;min-height:15px}
+.scan-route{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+.scan-route select{background:#1c1c1c;color:#fff;border-color:#444;padding:8px 10px;font-size:15px}
+.scan-route span{color:#bbb;font-weight:700}
 .scan-read{color:#fff;text-align:center;font:600 14px system-ui;min-height:20px;padding:6px 16px 0}
 .seg.dark button{background:#1c1c1c;color:#ddd;border-color:#444}
 .seg.dark button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
@@ -233,7 +236,8 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <div id="scanOv" class="overlay" hidden>
   <div class="scan-top"><b data-i18n>Scanner un code-barres</b><button class="btn ghost" id="scanClose" type="button" data-i18n>Fermer</button></div>
   <div class="scan-mode" id="scanModeBox">
-    <div class="seg dark" id="scanMode"><button type="button" data-m="open" data-i18n>Ouvrir la fiche</button><button type="button" data-m="quick" data-i18n>Sortie rapide (vente)</button></div>
+    <div class="seg dark" id="scanMode"><button type="button" data-m="open" data-i18n>Ouvrir la fiche</button><button type="button" data-m="quick" data-i18n>Sortie rapide (vente)</button><button type="button" data-m="xfer" id="scanModeXfer" data-i18n>Transfert rapide</button></div>
+    <div class="scan-route" id="scanRoute" hidden><select id="scanFrom" aria-label="De"></select><span>→</span><select id="scanTo" aria-label="Vers"></select></div>
     <small id="scanInfo"></small>
   </div>
   <div id="reader"></div>
@@ -246,7 +250,7 @@ dialog.in h2{color:var(--in)}dialog.out h2{color:var(--out)}
 <script>
 'use strict';
 /* ====== Constantes ====== */
-const APP_VERSION = '23';
+const APP_VERSION = '24';
 const FILE_NAME = 'gestion-stock-donnees.json';
 const CATALOG_NAME = 'gestion-stock-catalogue.json';   // 2e fichier : vitrine publique (lecture seule, sans prix d'achat ni mouvements)
 // Clé d'API Google (restreinte à « Google Drive API » et au site https://rkroman-86.github.io/*) :
@@ -692,7 +696,11 @@ const EN = {
 "Ajouter": "Add",
 "Supprimer ce transfert ? Le stock de chaque lieu sera recalculé.": "Delete this transfer? Stock at each location will be recalculated.",
 "Lecture en cours… {n}/{m}": "Reading… {n}/{m}",
-"Scanner aussi les codes-barres rares (Code 39, ITF, UPC-E) — à n'activer que si vos produits en ont : plus de risque de fausses lectures": "Also scan rare barcodes (Code 39, ITF, UPC-E) — only enable if your products use them: higher risk of misreads"
+"Scanner aussi les codes-barres rares (Code 39, ITF, UPC-E) — à n'activer que si vos produits en ont : plus de risque de fausses lectures": "Also scan rare barcodes (Code 39, ITF, UPC-E) — only enable if your products use them: higher risk of misreads",
+"Transfert rapide": "Quick transfer",
+"⚠️ Choisissez deux lieux différents": "⚠️ Choose two different locations",
+"Scan → transfert prêt → Valider → scan suivant · transférés aujourd'hui : {n} article(s)": "Scan → transfer ready → Save → next scan · transferred today: {n} item(s)",
+"Transférer et scanner le suivant": "Transfer and scan next"
 };
 // Les textes sont écrits en français dans le code ; tr() renvoie la traduction anglaise si la langue est EN.
 // {nom} dans un texte est remplacé par la valeur correspondante.
@@ -797,11 +805,13 @@ function addTransfer(p, from, to, q, dateISO, note) {
   DB.movements[b] = { ...base, id: b, dir: 'in', loc: to || '' };
 }
 // Fenêtre « Transfert entre lieux »
-function openTransfer(pid) {
+let xferQuick = false;
+function openTransfer(pid, opts = {}) {
   const p = DB.products[pid]; if (!p) return;
   const split = locStockOf(pid), pos = locSplit(split).filter(([, q]) => q > 0);
-  const from = pos.length ? pos[0][0] : defLoc(p);
-  const to = (activeLocs().find(l => l.id !== from) || {}).id || '';
+  const from = opts.from !== undefined ? opts.from : pos.length ? pos[0][0] : defLoc(p);
+  const to = opts.to !== undefined ? opts.to : (activeLocs().find(l => l.id !== from) || {}).id || '';
+  xferQuick = !!opts.quick;
   $('#infoTitle').textContent = tr('Transfert entre lieux');
   $('#infoBody').innerHTML = `
     <p class="muted small" style="margin:0">${esc(p.name)} · ${tr('stock total :')} ${fmtNum(stockOf(pid))}</p>
@@ -810,14 +820,15 @@ function openTransfer(pid) {
     <label>${tr('Vers')}<select id="x_to">${locOptions(to)}</select></label>
     <label>${tr('Quantité')}<span class="qty"><button type="button" class="btn" data-xq="-1">−</button><input id="x_qty" inputmode="decimal" value="1" autocomplete="off"><button type="button" class="btn" data-xq="1">+</button></span></label>
     <label>Date<input type="datetime-local" id="x_date" value="${localDT()}"></label>
-    <label>${tr('Référence / note')}<input id="x_note" placeholder="${tr('Bon de livraison, chantier, motif…')}" autocomplete="off"></label>
-    <button class="btn primary block big" id="x_ok" type="button">⇄ ${tr('Transférer')}</button>`;
+    <label>${tr('Référence / note')}<input id="x_note" value="${esc(opts.note || '')}" placeholder="${tr('Bon de livraison, chantier, motif…')}" autocomplete="off"></label>
+    <button class="btn primary block big" id="x_ok" type="button">⇄ ${opts.quick ? tr('Transférer et scanner le suivant') : tr('Transférer')}</button>`;
   const avail = () => locStockOf(pid)[$('#x_from').value] || 0;
   const showAvail = () => { $('#x_avail').textContent = tr('Disponible à « {l} » : {q}', { l: locName($('#x_from').value), q: fmtNum(avail()) }); };
   showAvail();
   $('#x_from').onchange = showAvail;
   $$('[data-xq]').forEach(b => b.onclick = () => { $('#x_qty').value = fmtNum(Math.max(0, num($('#x_qty').value) + +b.dataset.xq)); });
   $('#x_qty').addEventListener('focus', e => e.target.select());
+  $('#x_note').addEventListener('focus', e => e.target.select());
   $('#x_ok').onclick = () => {
     const q = num($('#x_qty').value), from = $('#x_from').value, to = $('#x_to').value;
     if (!(q > 0)) { toast(tr('Quantité invalide')); return; }
@@ -826,6 +837,7 @@ function openTransfer(pid) {
     if (q > a && !confirm(tr('Stock insuffisant à « {l} » ({s}). Transférer quand même ?', { l: locName(from), s: fmtNum(a) }))) return;
     const dv = $('#x_date').value;
     addTransfer(DB.products[pid], from, to, q, dv ? new Date(dv).toISOString() : nowISO(), $('#x_note').value.trim());
+    if (xferQuick) { S.xferFrom = from; S.xferTo = to; S.lastXferRef = $('#x_note').value.trim(); saveS(); }   // trajet modifié dans la fenêtre : on le garde
     $('#infoDlg').close(); touch();
     toast(tr('Transfert enregistré : {q} · {a} → {b}', { q: fmtNum(q), a: locName(from), b: locName(to) }));
     rerender();
@@ -1246,10 +1258,32 @@ function todaySales() {
   for (const m of Object.values(DB.movements)) if (!m.deleted && m.dir === 'out' && m.type === 'vente' && localDT(new Date(m.date)).slice(0, 10) === d) n += +m.qty || 0;
   return n;
 }
+function todayXfers() {
+  const d = localDT().slice(0, 10); let n = 0;
+  for (const m of Object.values(DB.movements)) if (!m.deleted && m.type === 'transfert' && m.dir === 'in' && localDT(new Date(m.date)).slice(0, 10) === d) n += +m.qty || 0;
+  return n;
+}
+// Trajet du « Transfert rapide » (mémorisé sur l'appareil) : lieux encore existants, sinon les deux premiers lieux
+const validLoc = id => id === '' || (id && DB.locations[id] && !DB.locations[id].deleted);
+function xferRoute() {
+  const ls = activeLocs();
+  let from = validLoc(S.xferFrom) ? S.xferFrom : (ls[0] || {}).id || '';
+  let to = validLoc(S.xferTo) ? S.xferTo : ((ls.find(l => l.id !== from) || {}).id || '');
+  return { from, to };
+}
 function renderScanMode() {
-  const quick = S.scanMode === 'quick';
-  $$('#scanMode button').forEach(b => b.classList.toggle('on', b.dataset.m === (quick ? 'quick' : 'open')));
-  $('#scanInfo').textContent = quick ? tr('Scan → fenêtre de vente prête → Valider → scan suivant · ventes du jour : {n} article(s)', { n: fmtNum(todaySales()) }) : tr('Scan → ouverture de la fiche produit');
+  const canX = activeLocs().length > 0;
+  if (S.scanMode === 'xfer' && !canX) S.scanMode = 'open';
+  const mode = S.scanMode === 'quick' || S.scanMode === 'xfer' ? S.scanMode : 'open';
+  $('#scanModeXfer').hidden = !canX;
+  $$('#scanMode button').forEach(b => b.classList.toggle('on', b.dataset.m === mode));
+  $('#scanRoute').hidden = mode !== 'xfer';
+  if (mode === 'xfer') {
+    const r = xferRoute();
+    $('#scanFrom').innerHTML = locOptions(r.from); $('#scanTo').innerHTML = locOptions(r.to);
+    $('#scanInfo').textContent = r.from === r.to ? tr('⚠️ Choisissez deux lieux différents')
+      : tr('Scan → transfert prêt → Valider → scan suivant · transférés aujourd\'hui : {n} article(s)', { n: fmtNum(todayXfers()) });
+  } else $('#scanInfo').textContent = mode === 'quick' ? tr('Scan → fenêtre de vente prête → Valider → scan suivant · ventes du jour : {n} article(s)', { n: fmtNum(todaySales()) }) : tr('Scan → ouverture de la fiche produit');
 }
 /* Anti-fausses lectures :
    - clé de contrôle vérifiée pour EAN-13 / EAN-8 / UPC-A ;
@@ -1298,6 +1332,7 @@ function onGlobalScan(code) {
   if (!code) return;
   const p = findByCode(code);
   if (p && S.scanMode === 'quick') { openMove(p.id, 'out', { type: 'vente', quick: true, note: S.lastRef || '' }); return; }
+  if (p && S.scanMode === 'xfer' && activeLocs().length) { const r = xferRoute(); openTransfer(p.id, { quick: true, from: r.from, to: r.to, note: S.lastXferRef || '' }); return; }
   if (p) { location.hash = '#/p/' + p.id; toast(p.name); }
   else if (confirm(tr('Code {c} inconnu.\nCréer un nouveau produit avec ce code ?', { c: code }))) location.hash = '#/new/' + encodeURIComponent(code);
 }
@@ -2271,6 +2306,10 @@ async function init() {
   bindMoveDialog();
   $('#btnScan').onclick = () => openScanner(onGlobalScan, true);
   $('#scanMode').onclick = e => { const b = e.target.closest('[data-m]'); if (!b) return; S.scanMode = b.dataset.m; saveS(); renderScanMode(); };
+  $('#scanFrom').onchange = e => { S.xferFrom = e.target.value; saveS(); renderScanMode(); };
+  $('#scanTo').onchange = e => { S.xferTo = e.target.value; saveS(); renderScanMode(); };
+  // Transfert rapide : à la fermeture de la fenêtre (validée ou annulée), on relance le scanner
+  $('#infoDlg').addEventListener('close', () => { if (xferQuick) { xferQuick = false; setTimeout(() => openScanner(onGlobalScan, true), 150); } });
   $('#btnNew').onclick = () => { if (location.hash === '#/new') route(); else location.hash = '#/new'; };
   $('#btnSettings').onclick = () => { location.hash = '#/settings'; };
   $('#syncBadge').onclick = () => { if (!S.driveOn) location.hash = '#/settings'; else syncNow(true); };
